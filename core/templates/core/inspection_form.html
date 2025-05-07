@@ -1,0 +1,146 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Inspeção – {{ truck.plate }}{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <!-- Cabeçalho do formulário -->
+  <div class="flex items-center mb-6 border-b border-gray-200 pb-4">
+    <div class="bg-primary/20 p-2 rounded-full mr-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold text-secondary">Inspeção</h1>
+      <p class="text-gray-600">Caminhão {{ truck.plate }}</p>
+    </div>
+  </div>
+
+  <form method="post" class="space-y-6 crispy-form-styled">
+    {% csrf_token %}
+
+    <!-- Dados gerais da inspeção -->
+    <div class="bg-gray-50 rounded-lg border border-gray-200 p-5">
+      <div class="flex items-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <h2 class="text-lg font-semibold text-secondary">Dados gerais</h2>
+      </div>
+      {{ form|crispy }}
+    </div>
+
+    <!-- Seção de pneus -->
+    <div class="bg-gray-50 rounded-lg border border-gray-200 p-5">
+      <div class="flex items-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd" />
+        </svg>
+        <h2 class="text-lg font-semibold text-secondary">Pneus</h2>
+      </div>
+      
+      {{ formset.management_form }}
+      
+      <div class="grid md:grid-cols-2 gap-4">
+        {% for tire_form in formset.forms %}
+          <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+            <div class="flex items-center mb-3">
+              <div class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary/20 text-secondary font-medium mr-2">
+                {{ forloop.counter }}
+              </div>
+              <h3 class="font-medium text-secondary">Pneu {{ forloop.counter }}</h3>
+            </div>
+            
+            <div class="space-y-4">
+              {{ tire_form|crispy }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Botões de ação -->
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-primary/90 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        Salvar
+      </button>
+      <a href="javascript:history.back()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<style>
+  /* Ajustes para os campos do crispy forms sem usar @apply */
+  .crispy-form-styled .asteriskField {
+    color: #ef4444;
+    margin-left: 0.25rem;
+  }
+  
+  .crispy-form-styled .form-group {
+    margin-bottom: 0.75rem;
+  }
+  
+  .crispy-form-styled .control-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+  }
+  
+  .crispy-form-styled .form-control,
+  .crispy-form-styled .textinput,
+  .crispy-form-styled .numberinput,
+  .crispy-form-styled .dateinput,
+  .crispy-form-styled .select,
+  .crispy-form-styled .textarea {
+    margin-top: 0.25rem;
+    display: block;
+    width: 100%;
+    border-radius: 0.375rem;
+    border-color: #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .crispy-form-styled .form-control:focus,
+  .crispy-form-styled .textinput:focus,
+  .crispy-form-styled .numberinput:focus,
+  .crispy-form-styled .dateinput:focus,
+  .crispy-form-styled .select:focus,
+  .crispy-form-styled .textarea:focus {
+    border-color: #FFD100;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 209, 0, 0.2);
+  }
+  
+  .crispy-form-styled .form-text {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+  
+  .crispy-form-styled small.form-text {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+  
+  .crispy-form-styled .invalid-feedback {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,95 @@
+
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex items-center mb-6 border-b border-gray-200 pb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+    <h1 class="text-2xl font-bold text-secondary">{{ title }}</h1>
+  </div>
+
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <div class="form-styled">
+        {{ form.as_p }}
+      </div>
+    </div>
+    
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-primary/90 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        Salvar
+      </button>
+      <a href="javascript:history.back()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<style>
+  /* Estilização para os campos do crispy forms sem @apply */
+  .form-styled p {
+    margin-bottom: 1rem;
+  }
+  
+  .form-styled label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+  }
+  
+  .form-styled input[type="text"],
+  .form-styled input[type="number"],
+  .form-styled input[type="email"],
+  .form-styled input[type="date"],
+  .form-styled input[type="password"],
+  .form-styled select,
+  .form-styled textarea {
+    margin-top: 0.25rem;
+    display: block;
+    width: 100%;
+    border-radius: 0.375rem;
+    border-color: #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .form-styled input[type="text"]:focus,
+  .form-styled input[type="number"]:focus,
+  .form-styled input[type="email"]:focus,
+  .form-styled input[type="date"]:focus,
+  .form-styled input[type="password"]:focus,
+  .form-styled select:focus,
+  .form-styled textarea:focus {
+    border-color: #FFD100;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 209, 0, 0.2);
+  }
+  
+  .form-styled .helptext {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+  
+  .form-styled .errorlist {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    list-style-type: disc;
+    padding-left: 1.25rem;
+  }
+</style>
+{% endblock %}

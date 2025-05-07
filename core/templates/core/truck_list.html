@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+{% block title %}Caminhões – {{ company.name }}{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <!-- Cabeçalho da página -->
+  <div class="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
+    <h1 class="text-2xl font-bold text-secondary">Caminhões – {{ company.name }}</h1>
+    
+    <a href="{% url 'core:truck_create' company.id %}" 
+       class="px-4 py-2 bg-primary hover:bg-primary/90 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+      Novo caminhão
+    </a>
+  </div>
+
+  <!-- Tabela de caminhões -->
+  <div class="overflow-x-auto">
+    <table class="w-full bg-white mb-6">
+      <thead class="bg-gray-50 text-left">
+        <tr>
+          <th class="px-4 py-3 text-sm font-medium text-gray-600 uppercase tracking-wider">Placa</th>
+          <th class="px-4 py-3 text-sm font-medium text-gray-600 uppercase tracking-wider">Tipo</th>
+          <th class="px-4 py-3 text-sm font-medium text-gray-600 uppercase tracking-wider">Marca</th>
+          <th class="px-4 py-3 text-sm font-medium text-gray-600 uppercase tracking-wider">Modelo</th>
+          <th class="px-4 py-3 text-sm font-medium text-gray-600 uppercase tracking-wider">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for t in company.trucks.all %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm">{{ t.plate }}</td>
+          <td class="px-4 py-3 text-sm">{{ t.truck_type.description }}</td>
+          <td class="px-4 py-3 text-sm">{{ t.brand }}</td>
+          <td class="px-4 py-3 text-sm">{{ t.model }}</td>
+          <td class="px-4 py-3 text-sm flex gap-2">
+            <a href="{% url 'core:inspection_list' t.id %}"
+               class="px-3 py-1 border border-gray-300 text-gray-700 rounded text-xs font-medium hover:bg-gray-100 transition-colors">
+              Inspeções
+            </a>
+            <a href="{% url 'core:inspection_create' t.id %}"
+               class="px-3 py-1 bg-primary hover:bg-primary/90 text-secondary rounded text-xs font-medium transition-colors flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Inspeção
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-4 py-6 text-center text-gray-500">Nenhum caminhão encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Botão voltar -->
+  <div>
+    <a href="javascript:history.back()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-secondary font-medium rounded-md shadow-sm transition-colors flex items-center w-max">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Voltar
+    </a>
+  </div>
+</div>
+{% endblock %}

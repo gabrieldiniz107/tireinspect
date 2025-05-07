@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}Dashboard - PneuCheck{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+  
+  <div class="p-6">
+    <!-- Logo centralizado, como no login -->
+    <div class="flex justify-center mb-6">
+      <img src="{% static 'img/checkUpPneus_logo.png' %}" alt="PneuCheck Logo" class="h-16 md:h-20">
+      <noscript>
+        <div class="text-xl font-bold text-primary bg-secondary px-4 py-2 rounded">PneuCheck</div>
+      </noscript>
+    </div>
+    
+    <!-- Mensagem de boas-vindas -->
+    <div class="flex items-center justify-center mb-4">
+      <div class="h-8 w-8 bg-primary rounded-full flex items-center justify-center mr-2">
+        <span class="text-secondary font-bold">{{ user.username.0|upper }}</span>
+      </div>
+      <h2 class="text-lg font-medium text-gray-700">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h2>
+    </div>
+    
+    <!-- Mensagem de orientação -->
+    <div class="border-l-4 border-primary pl-4 py-2 bg-gray-50 mb-6">
+      <p class="text-sm text-gray-700">Use o menu para gerenciar empresas.</p>
+    </div>
+    
+    <!-- Card de navegação - Apenas Empresas -->
+    <div class="flex justify-center mt-4 mb-6">
+      <a href="{% url 'core:company_list' %}" class="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col items-center w-full max-w-xs">
+        <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-2">
+          <!-- Ícone Empresas -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <span class="font-medium text-secondary">Empresas</span>
+      </a>
+    </div>
+    
+    <!-- Botão de Logout, seguindo o estilo do botão de login -->
+    <div class="flex justify-center">
+      
+      <form method="post" action="{% url 'core:logout' %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary bg-primary hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary w-full max-w-xs">
+          Sair
+        </button>
+      </form>      
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -48,12 +48,14 @@ INSTALLED_APPS = [
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-load_dotenv()                    # carrega variáveis do .env
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env.local" if DEBUG else BASE_DIR / ".env")
+                 # carrega variáveis do .env
+
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', "").split(',')
 
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"

@@ -113,16 +113,8 @@ def gerar_inspecao_pdf(inspecao):
             x = (width-iw)/2
             p.drawImage(ImageReader(imgp), x, y-ih, width=iw, height=ih, mask='auto')
 
-    # rodapé página atual
-    p.setStrokeColor(cor_sec)
-    p.setLineWidth(0.5)
-    p.line(20*mm,15*mm+5*mm,width-20*mm,15*mm+5*mm)
-    p.setFont('Helvetica',8)
-    p.setFillColor(cor_sec)
-    p.drawString(20*mm,15*mm, f"Inspeção #{inspecao.id} • {inspecao.date.strftime('%d/%m/%Y')}")
-    p.drawRightString(width-20*mm,15*mm, str(p.getPageNumber()))
-
     p.showPage()
     p.save()
     buffer.seek(0)
     return buffer.getvalue()
+

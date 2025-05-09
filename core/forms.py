@@ -31,9 +31,30 @@ class InspectionForm(forms.ModelForm):
         fields = ["date", "odometer", "notes"]
 
 class TireForm(forms.ModelForm):
+    # Adicionar campo de escolha para recapagem com opções Sim/Não
+    rec = forms.ChoiceField(
+        label="Novo",
+        choices=((True, "Sim"), (False, "Não")),
+        widget=forms.RadioSelect,
+        initial=False
+    )
+    
     class Meta:
         model = Tire
-        exclude = ("inspection", "position")   # definiremos no view
+        exclude = ("inspection", "position")  # definiremos no view
+        
+    def __init__(self, *args, **kwargs):
+        super(TireForm, self).__init__(*args, **kwargs)
+        # Se o objeto já existe, converte o valor booleano em string para o campo
+        if self.instance.pk and 'rec' in self.initial:
+            self.initial['rec'] = str(self.initial['rec']).lower() == 'true'
+            
+    def clean_rec(self):
+        # Converter a string 'True'/'False' para o valor booleano correspondente
+        value = self.cleaned_data['rec']
+        if isinstance(value, str):
+            return value == 'True'
+        return value   # definiremos no view
 
 # Formset dinâmico – vamos instanciar com extra=tire_count no view
 TireFormSet = inlineformset_factory(

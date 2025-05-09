@@ -78,6 +78,7 @@ class Inspection(models.Model):
         return f"{self.truck.plate} – {self.date}"
 
 
+
 class Tire(models.Model):
     """
     Dados individuais de um pneu naquela inspeção.
@@ -95,7 +96,7 @@ class Tire(models.Model):
     pattern     = models.CharField("Desenho", max_length=30, blank=True)
     fire_number = models.CharField("Nº Fogo", max_length=20, blank=True)
     dot         = models.CharField("DOT", max_length=15, blank=True)
-    rec         = models.CharField("Rec", max_length=15, blank=True)
+    rec         = models.BooleanField("Recapado", default=False)
 
     class Meta:
         unique_together = [("inspection", "position")]

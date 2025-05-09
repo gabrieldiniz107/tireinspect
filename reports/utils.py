@@ -8,7 +8,6 @@ from reportlab.lib import colors
 import os
 from reportlab.lib.utils import ImageReader
 
-
 def gerar_inspecao_pdf(inspecao):
     """
     Gera PDF de inspeção:
@@ -23,6 +22,8 @@ def gerar_inspecao_pdf(inspecao):
     cor_prim = Color(1, 0.82, 0, 1)
     cor_sec = Color(0.22, 0.26, 0.3, 1)
     cor_claro = Color(0.9, 0.9, 0.9, 1)
+    cor_verde = Color(0, 0.7, 0, 1)    # Cor verde para "Sim"
+    cor_vermelho = Color(0.8, 0, 0, 1) # Cor vermelha para "Não"
 
     # cabeçalho logo
     logo = os.path.join('static', 'img', 'checkUpPneus_logo.png')
@@ -70,24 +71,37 @@ def gerar_inspecao_pdf(inspecao):
     p.drawString(22*mm, y+2.5*mm, 'RELATÓRIO DE PNEUS')
     y -= 10*mm
 
-    headers = ['Pos','Sulcos','Marca','Desenho','Nº Fogo','DOT','Recap']
+    headers = ['Pos','Sulcos','Marca','Desenho','Nº Fogo','DOT','Novo']
     data = [headers]
+    
     for t in inspecao.tires.all():
         sc = f"{t.groove_1}/{t.groove_2}/{t.groove_3}/{t.groove_4}"
         data.append([str(t.position), sc, t.brand or '—', t.pattern or '—',
-                     t.fire_number or '—', t.dot or '—', 'Sim' if t.rec else 'Não'])
+                     t.fire_number or '—', t.dot or '—', '✓' if t.rec else '✗'])
+    
     colw = [15*mm,25*mm,25*mm,25*mm,25*mm,25*mm,20*mm]
     table = Table(data, colWidths=colw)
-    table.setStyle(TableStyle([
+    
+    table_style = [
         ('BACKGROUND',(0,0),(-1,0),cor_sec),
         ('TEXTCOLOR',(0,0),(-1,0),colors.white),
         ('ALIGN',(0,0),(-1,-1),'CENTER'),
         ('GRID',(0,0),(-1,-1),0.5,colors.grey),
         ('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,cor_claro])
-    ]))
-    table.wrapOn(p,width,height)
+    ]
+    
+    # Adiciona cores para a coluna de recap
+    for i in range(1, len(data)):
+        if data[i][-1] == '✓':  # Se for recapado (✓)
+            table_style.append(('TEXTCOLOR', (6, i), (6, i), cor_verde))
+        else:  # Se não for recapado (✗)
+            table_style.append(('TEXTCOLOR', (6, i), (6, i), cor_vermelho))
+    
+    table.setStyle(TableStyle(table_style))
+    
+    table.wrapOn(p, width, height)
     th = len(data)*8*mm
-    table.drawOn(p,20*mm,y-th)
+    table.drawOn(p, 20*mm, y-th)
     y -= (th+15*mm)
 
     # preparar imagem
@@ -117,4 +131,3 @@ def gerar_inspecao_pdf(inspecao):
     p.save()
     buffer.seek(0)
     return buffer.getvalue()
-

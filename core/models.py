@@ -23,7 +23,7 @@ class Company(models.Model):
 
 class TruckType(models.Model):
     """Template fixo – 8 combinações de eixos e pneus."""
-    code         = models.CharField(max_length=4, unique=True)
+    code         = models.CharField(max_length=50, unique=True)
     description  = models.CharField(max_length=60)
     axle_count   = models.PositiveSmallIntegerField()
     tire_count   = models.PositiveSmallIntegerField()

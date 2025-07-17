@@ -1,0 +1,225 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Relatório por intervalo de meses{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+  <!-- cabeçalho -->
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold">Relatório de Inspeções por Mês</h1>
+
+    {% if request.GET.company_id %}
+      <a href="{% url 'core:truck_list' request.GET.company_id %}"
+         class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Voltar
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- filtro -->
+  <form method="get" class="space-y-4">
+    {{ form|crispy }}
+    <button type="submit"
+            class="px-4 py-2 bg-primary text-secondary rounded hover:bg-primary/90">
+      Filtrar
+    </button>
+  </form>
+
+  {% csrf_token %} {# necessário para o fetch #}
+
+  {% if inspections is not None %}
+    <!-- header resultados -->
+    <div class="flex items-center justify-between mt-6 mb-4">
+      <h2 class="text-lg font-semibold">
+        {{ inspections.count }} inspeções de
+        {{ form.cleaned_data.start|date:"m/Y" }} a {{ form.cleaned_data.end|date:"m/Y" }}
+      </h2>
+
+      {% if inspections %}
+        <div class="flex items-center gap-3">
+          <button id="selectAllBtn"
+                  type="button"
+                  class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                  aria-label="Selecionar/desmarcar todas">
+            Selecionar Todas
+          </button>
+
+          <button id="generatePdfBtn"
+                  type="button"
+                  class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span id="pdfBtnText">Gerar PDF</span>
+          </button>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- tabela -->
+    {% if inspections %}
+      <div class="overflow-x-auto">
+        <table class="w-full mt-4 table-auto border-collapse border border-gray-200">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-3 border border-gray-200">
+                <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 rounded border-gray-300" aria-label="Selecionar todas">
+              </th>
+              <th class="p-3 text-left border border-gray-200">Data</th>
+              <th class="p-3 text-left border border-gray-200">Caminhão</th>
+              <th class="p-3 text-left border border-gray-200">Hodômetro</th>
+              <th class="p-3 text-left border border-gray-200">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for insp in inspections %}
+              <tr class="hover:bg-gray-50">
+                <td class="p-3 border border-gray-200">
+                  <input type="checkbox"
+                         value="{{ insp.id }}"
+                         class="inspection-checkbox w-4 h-4 text-blue-600 rounded border-gray-300">
+                </td>
+                <td class="p-3 border border-gray-200">{{ insp.date|date:"d/m/Y" }}</td>
+                <td class="p-3 border border-gray-200">{{ insp.truck.plate }}</td>
+                <td class="p-3 border border-gray-200">{{ insp.odometer|default:"—" }}</td>
+                <td class="p-3 border border-gray-200">
+                  <a href="{% url 'reports:inspection_pdf' insp.id %}"
+                     class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    PDF
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="mt-4 text-gray-600">Nenhuma inspeção nesse intervalo.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if not request.GET.company_id %}
+    <div class="mt-6">
+      <a href="javascript:history.back()"
+         class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center w-max">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Voltar
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const selectAllCheckbox    = document.getElementById("selectAll");
+  const selectAllBtn         = document.getElementById("selectAllBtn");
+  const generatePdfBtn       = document.getElementById("generatePdfBtn");
+  const pdfBtnText           = document.getElementById("pdfBtnText");
+  const inspectionCheckboxes = document.querySelectorAll(".inspection-checkbox");
+
+  // Função para ler cookie
+  const getCookie = (name) => {
+    const cookie = document.cookie
+      .split(";")
+      .map(c => c.trim())
+      .find(c => c.startsWith(name + "="));
+    return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
+  };
+  const csrftoken = getCookie("csrftoken");
+
+  // Habilita/desabilita botões e checkbox master
+  const updateButtons = () => {
+    const checked = document.querySelectorAll(".inspection-checkbox:checked");
+    const n       = checked.length;
+    const total   = inspectionCheckboxes.length;
+
+    generatePdfBtn.disabled = n === 0;
+    pdfBtnText.textContent  = n > 0 ? `Gerar PDF (${n})` : "Gerar PDF";
+
+    if (n === 0) {
+      selectAllCheckbox.checked      = false;
+      selectAllCheckbox.indeterminate = false;
+      selectAllBtn.textContent       = "Selecionar Todas";
+    } else if (n === total) {
+      selectAllCheckbox.checked      = true;
+      selectAllCheckbox.indeterminate = false;
+      selectAllBtn.textContent       = "Desmarcar Todas";
+    } else {
+      selectAllCheckbox.checked      = false;
+      selectAllCheckbox.indeterminate = true;
+      selectAllBtn.textContent       = "Selecionar Todas";
+    }
+  };
+
+  // Eventos
+  selectAllCheckbox?.addEventListener("change", () => {
+    inspectionCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+    updateButtons();
+  });
+
+  selectAllBtn?.addEventListener("click", () => {
+    const allChecked = [...inspectionCheckboxes].every(cb => cb.checked);
+    inspectionCheckboxes.forEach(cb => cb.checked = !allChecked);
+    updateButtons();
+  });
+
+  inspectionCheckboxes.forEach(cb => cb.addEventListener("change", updateButtons));
+
+  generatePdfBtn?.addEventListener("click", async () => {
+    const ids = [...document.querySelectorAll(".inspection-checkbox:checked")].map(cb => cb.value);
+    if (!ids.length) {
+      alert("Selecione pelo menos uma inspeção.");
+      return;
+    }
+
+    const originalText = pdfBtnText.textContent;
+    pdfBtnText.textContent = "Gerando PDF…";
+    generatePdfBtn.disabled = true;
+
+    try {
+      const response = await fetch("{% url 'reports:bulk_inspection_pdf' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({ inspection_ids: ids })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text() || "Erro ao gerar PDF.");
+      }
+
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `inspecoes_${new Date().toISOString().slice(0,10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Erro inesperado ao gerar PDF.");
+    } finally {
+      pdfBtnText.textContent = originalText;
+      generatePdfBtn.disabled = false;
+    }
+  });
+
+  // Inicializa estado
+  updateButtons();
+});
+</script>
+{% endblock %}

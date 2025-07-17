@@ -22,9 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+DEBUG = True
+ALLOWED_HOSTS = ['*',]
+
+
 
 
 # Application definition
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_tailwind",
     "reports",
+    "inspection_reports",
     
 
 ]
@@ -55,7 +58,7 @@ load_dotenv(dotenv_path=BASE_DIR / ".env.local" if DEBUG else BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', "").split(',')
+
 
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
@@ -107,7 +110,7 @@ WSGI_APPLICATION = 'tireinspect.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import dj_database_url
+""" import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -115,6 +118,17 @@ DATABASES = {
         conn_max_age=600,
         ssl_require=not DEBUG  # SSL apenas em produção
     )
+} """
+
+import dj_database_url
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 

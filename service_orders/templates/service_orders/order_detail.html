@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+{% block title %}Pedido de Serviço{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <h1 class="text-2xl font-bold text-secondary mb-4">Pedido de Serviço</h1>
+  <div class="flex items-center gap-3 mb-4">
+    <span class="text-sm text-gray-600">Nº: {{ order.service_number|default:"—" }}</span>
+    <span class="text-sm text-gray-600">Data: {{ order.order_date|date:"d/m/Y" }}</span>
+  </div>
+  <dl class="grid grid-cols-1 gap-4">
+    <div>
+      <dt class="text-sm text-gray-500">Cliente</dt>
+      <dd class="text-gray-900">{{ order.client }}</dd>
+    </div>
+    <div>
+      <dt class="text-sm text-gray-500">CNPJ/CPF</dt>
+      <dd class="text-gray-900">{{ order.cnpj_cpf }}</dd>
+    </div>
+  </dl>
+
+  <div class="mt-4">
+    <h2 class="text-base font-medium text-secondary mb-2">Caminhões</h2>
+    {% if order.trucks.all %}
+      <ul class="divide-y divide-gray-200">
+        {% for t in order.trucks.all %}
+          <li class="py-2 flex items-center justify-between">
+            <div>
+              <div class="font-medium text-gray-900">Placa: {{ t.plate }}</div>
+              <div class="text-sm text-gray-600">Frota: {{ t.fleet|default:"—" }}</div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-gray-600">Nenhum caminhão vinculado.</p>
+    {% endif %}
+  </div>
+  <div class="mt-6">
+    <a href="{% url 'service_orders:order_list' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+    <a href="{% url 'service_orders:order_pdf' order.id %}"
+       class="ml-2 px-4 py-2 bg-primary hover:bg-primary/90 text-secondary rounded-md">Gerar PDF</a>
+  </div>
+</div>
+{% endblock %}

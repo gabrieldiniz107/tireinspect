@@ -4,19 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}PneuCheck{% endblock %}</title>
+  {% load static %}
+  {# Em desenvolvimento, use CDN como fallback; em produção, CSS compilado #}
+  {% if debug %}
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            primary: '#FFD100', // Amarelo
-            secondary: '#111111', // Preto
+            primary: '#FFD100',
+            secondary: '#111111',
           }
         }
       }
     }
   </script>
+  {% else %}
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  {% endif %}
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-center items-center py-6">
   <!-- Conteúdo principal centralizado -->

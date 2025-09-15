@@ -12,5 +12,6 @@ urlpatterns = [
        "relatorios/",
         include(("inspection_reports.urls", "inspection_reports"), namespace="inspection_reports"),
      ),
+    path("pedidos/", include("service_orders.urls", namespace="service_orders")),
 
 ]

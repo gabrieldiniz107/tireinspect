@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+{% block title %}Pedidos de Serviço{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-bold text-secondary">Pedidos de Serviço</h1>
+    <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-primary text-secondary rounded-md shadow hover:bg-primary/90">Novo pedido</a>
+  </div>
+
+  {% if orders %}
+    <ul class="divide-y divide-gray-200">
+      {% for order in orders %}
+        <li class="py-3 flex items-center justify-between">
+          <div>
+            <div class="font-medium text-gray-900">{{ order.client }} — {{ order.vehicle_plate }}</div>
+            <div class="text-sm text-gray-600">{{ order.city }} • {{ order.manufacturer }}</div>
+          </div>
+          <a href="{% url 'service_orders:order_detail' order.id %}" class="text-primary hover:underline">Ver</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-600">Nenhum pedido cadastrado ainda.</p>
+  {% endif %}
+</div>
+{% endblock %}
+

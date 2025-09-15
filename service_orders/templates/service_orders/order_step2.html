@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+{% block title %}Novo Pedido — Dados{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-0 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+    <h1 class="text-lg font-semibold text-secondary">Dados do Pedido</h1>
+  </div>
+
+  <form method="post" id="step2Form">
+    {% csrf_token %}
+
+    <div class="p-4 space-y-4">
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Cliente</label>
+          {{ form.client }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">CNPJ/CPF</label>
+          {{ form.cnpj_cpf }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Quantidade de caminhões</label>
+          {{ form.truck_count }}
+          <p class="text-xs text-gray-500 mt-1">Máximo de 10 caminhões.</p>
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <h2 class="text-base font-medium text-secondary mb-2">Caminhões</h2>
+        {{ formset.management_form }}
+        <div id="trucksWrapper" class="space-y-3">
+          {% for f in formset %}
+            <div class="truck-form p-3 border border-gray-200 rounded-md" data-index="{{ forloop.counter0 }}">
+              <div class="grid grid-cols-1 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Placa</label>
+                  {{ f.plate }}
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Frota</label>
+                  {{ f.fleet }}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+      <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+      <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function() {
+    const countInput = document.getElementById('id_truck_count');
+    const wrapper = document.getElementById('trucksWrapper');
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+
+    function updateVisible() {
+      const n = Math.max(1, Math.min(10, parseInt(countInput.value || '1', 10)));
+      const blocks = wrapper.querySelectorAll('.truck-form');
+      blocks.forEach((el, idx) => {
+        el.style.display = idx < n ? '' : 'none';
+      });
+      if (totalForms) totalForms.value = n;
+    }
+
+    countInput.addEventListener('input', updateVisible);
+    updateVisible();
+  })();
+</script>
+{% endblock %}
+

@@ -10,18 +10,29 @@
   {% if orders %}
     <ul class="divide-y divide-gray-200">
       {% for order in orders %}
-        <li class="py-3 flex items-center justify-between">
-          <div>
-            <div class="font-medium text-gray-900">{{ order.client }} — {{ order.vehicle_plate }}</div>
-            <div class="text-sm text-gray-600">{{ order.city }} • {{ order.manufacturer }}</div>
+        <li class="py-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-gray-900">{{ order.client }} — {{ order.vehicle_plate|default:"—" }}</div>
+              <div class="text-sm text-gray-600">{{ order.order_date|date:"d/m/Y" }} • Nº {{ order.service_number|default:"—" }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="{% url 'service_orders:order_detail' order.id %}" class="px-3 py-1.5 text-secondary bg-gray-100 hover:bg-gray-200 rounded-md">Ver</a>
+              <form method="post" action="{% url 'service_orders:order_delete' order.id %}" onsubmit="return confirm('Deseja excluir este pedido? Esta ação não pode ser desfeita.');">
+                {% csrf_token %}
+                <button type="submit" class="px-3 py-1.5 text-black bg-red-600 hover:bg-red-700 rounded-md">Excluir</button>
+              </form>
+            </div>
           </div>
-          <a href="{% url 'service_orders:order_detail' order.id %}" class="text-primary hover:underline">Ver</a>
         </li>
       {% endfor %}
     </ul>
   {% else %}
     <p class="text-gray-600">Nenhum pedido cadastrado ainda.</p>
   {% endif %}
+
+  <div class="mt-4 flex justify-end">
+    <a href="{% url 'core:home' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+  </div>
 </div>
 {% endblock %}
-

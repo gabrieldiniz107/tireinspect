@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.db.models import F, Sum, DecimalField, ExpressionWrapper
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -41,6 +43,12 @@ class ServiceOrder(models.Model):
     def __str__(self):
         return f"{self.client} - {self.vehicle_plate}"
 
+    @property
+    def total_amount(self):
+        expr = ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=12, decimal_places=2))
+        agg = self.items.aggregate(total=Sum(expr))
+        return agg.get("total") or Decimal("0.00")
+
 
 class ServiceOrderTruck(models.Model):
     order = models.ForeignKey(ServiceOrder, related_name="trucks", on_delete=models.CASCADE)
@@ -53,3 +61,31 @@ class ServiceOrderTruck(models.Model):
 
     def __str__(self):
         return self.plate
+
+
+class ServiceOrderItem(models.Model):
+    SERVICE_TYPES = (
+        (1, "Alinhamento"),
+        (2, "Aperto de tirantes"),
+        (3, "Borracharia"),
+        (4, "Socorro"),
+        (5, "Balanceamento"),
+    )
+
+    order = models.ForeignKey(ServiceOrder, related_name="items", on_delete=models.CASCADE)
+    # Novo: item associado a um caminhão específico (opcional para compatibilidade)
+    truck = models.ForeignKey('ServiceOrderTruck', related_name='items', on_delete=models.CASCADE, null=True, blank=True)
+    service_type = models.PositiveSmallIntegerField(choices=SERVICE_TYPES)
+    quantity = models.PositiveIntegerField(default=0)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.get_service_type_display()} x{self.quantity}"
+
+    @property
+    def total_price(self):
+        return (self.unit_price or Decimal("0")) * Decimal(self.quantity or 0)

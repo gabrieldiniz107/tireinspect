@@ -1,0 +1,186 @@
+{% extends "core/base.html" %}
+{% block title %}Serviços por Caminhão{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-0 overflow-hidden">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+    <h1 class="text-lg font-semibold text-secondary">Serviços por Caminhão</h1>
+    <div class="flex gap-1" aria-label="Etapas">
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+    </div>
+  </div>
+
+  <form method="post" id="servicesForm">
+    {% csrf_token %}
+    <div class="p-4 space-y-4">
+      <p class="text-sm text-gray-600">Para cada caminhão, adicione os serviços prestados (predefinidos), informando quantidade e valor unitário. Você pode adicionar várias linhas por caminhão.</p>
+
+      {% for truck, formset in truck_formsets %}
+        <div class="border border-gray-200 rounded-lg overflow-hidden h-[60vh] flex flex-col" data-truck-card data-prefix="{{ formset.prefix }}">
+          <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
+            <div class="text-sm font-semibold text-secondary">Caminhão — Placa {{ truck.plate }}{% if truck.fleet %} • Frota {{ truck.fleet }}{% endif %}</div>
+            <button type="button" class="text-sm px-3 py-1 rounded-md bg-primary text-secondary hover:bg-primary/90" data-add-row>Adicionar serviço</button>
+          </div>
+
+            <div class="p-3 flex-1 overflow-y-auto">
+              {{ formset.management_form }}
+              <div class="space-y-3" data-rows>
+                {% for f in formset.forms %}
+                  <div class="border border-gray-200 rounded-md p-3" data-row>
+                  {% if f.DELETE %}<div class="hidden">{{ f.DELETE }}</div>{% endif %}
+                  <div class="mb-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Serviço</label>
+                    {{ f.service_type }}
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium text-gray-600 mb-1">Qtd</label>
+                      {{ f.quantity }}
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-gray-600 mb-1">Preço</label>
+                      {{ f.unit_price }}
+                    </div>
+                  </div>
+                  <div class="mt-3 flex justify-end">
+                    <button type="button" class="px-3 py-1.5 text-red-600 hover:text-red-800 rounded-md border border-red-200" data-remove-row>Remover</button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- empty form template -->
+            <template data-empty-row>
+              <div class="border border-gray-200 rounded-md p-3" data-row>
+                <div class="mb-2">
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Serviço</label>
+                  {{ formset.empty_form.service_type }}
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Qtd</label>
+                    {{ formset.empty_form.quantity }}
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Preço</label>
+                    {{ formset.empty_form.unit_price }}
+                  </div>
+                </div>
+                <div class="mt-3 flex justify-end">
+                  <button type="button" class="px-3 py-1.5 text-red-600 hover:text-red-800 rounded-md border border-red-200" data-remove-row>Remover</button>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="px-4 py-2 border-t border-gray-200 bg-white flex items-center justify-end">
+            <div class="text-sm font-semibold text-secondary">Subtotal deste caminhão: R$ <span data-truck-total>0,00</span></div>
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-sm text-gray-600">Nenhum caminhão encontrado neste pedido.</p>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+      <a href="{% if is_edit %}{% url 'service_orders:order_edit_step2' order.id %}{% else %}{% url 'service_orders:order_create_step2' %}{% endif %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+      <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function() {
+    // Add/remove rows per truck card using empty_form template and TOTAL_FORMS
+    function toNumber(v) { const n = parseFloat((v || '').toString().replace(',', '.')); return isNaN(n) ? 0 : n; }
+    function formatBR(n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+    document.querySelectorAll('[data-truck-card]').forEach(function(card){
+      const prefix = card.getAttribute('data-prefix');
+      const addBtn = card.querySelector('[data-add-row]');
+      const rows = card.querySelector('[data-rows]');
+      const tmpl = card.querySelector('template[data-empty-row]');
+      const totalInput = card.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+      const subtotalEl = card.querySelector('[data-truck-total]');
+
+      function recalc() {
+        let sum = 0;
+        rows.querySelectorAll('[data-row]').forEach(function(r){
+          const q = r.querySelector('input[name$="-quantity"]');
+          const p = r.querySelector('input[name$="-unit_price"]');
+          const del = r.querySelector('input[name$="-DELETE"]');
+          if (del && del.checked) return;
+          const qty = toNumber(q && q.value);
+          const price = toNumber(p && p.value);
+          sum += qty * price;
+        });
+        if (subtotalEl) subtotalEl.textContent = formatBR(sum);
+      }
+
+      function addRow() {
+        const total = parseInt(totalInput.value, 10) || 0;
+        const html = tmpl.innerHTML.replace(/__prefix__/g, total);
+        const temp = document.createElement('tbody');
+        temp.innerHTML = html.trim();
+        const newRow = temp.firstElementChild;
+        rows.appendChild(newRow);
+        totalInput.value = total + 1;
+        recalc();
+      }
+      function removeRow(btn) {
+        const row = btn.closest('[data-row]');
+        // Try to set DELETE if exists
+        const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        if (del) {
+          del.checked = true;
+          row.style.display = 'none';
+        } else {
+          row.remove();
+          const total = parseInt(totalInput.value, 10) || 0;
+          totalInput.value = Math.max(0, total - 1);
+        }
+        recalc();
+      }
+
+      if (addBtn) addBtn.addEventListener('click', addRow);
+      rows.addEventListener('click', function(e){
+        const btn = e.target.closest('[data-remove-row]');
+        if (btn) removeRow(btn);
+      });
+      rows.addEventListener('input', function(e){
+        if (e.target && (e.target.name.endsWith('-quantity') || e.target.name.endsWith('-unit_price'))) {
+          recalc();
+        }
+      });
+
+      // initial calc
+      recalc();
+    });
+
+    // Simple browser confirmation before saving
+    const form = document.getElementById('servicesForm');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        if (!window.confirm('Deseja prosseguir para salvar o pedido?')) {
+          e.preventDefault();
+        }
+      });
+    }
+  })();
+</script>
+
+<style>
+  /* Remove setas dos inputs numéricos (Chrome, Safari, Edge) */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* Firefox */
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+</style>
+{% endblock %}

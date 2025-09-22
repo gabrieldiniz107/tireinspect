@@ -4,6 +4,11 @@
 <div class="bg-white rounded-lg shadow-md p-0 overflow-hidden">
   <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
     <h1 class="text-lg font-semibold text-secondary">Dados do Pedido</h1>
+    <div class="flex gap-1" aria-label="Etapas">
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+    </div>
   </div>
 
   <form method="post" id="step2Form">
@@ -32,6 +37,7 @@
         <div id="trucksWrapper" class="space-y-3">
           {% for f in formset %}
             <div class="truck-form p-3 border border-gray-200 rounded-md" data-index="{{ forloop.counter0 }}">
+              <div class="text-sm font-semibold text-secondary mb-2">Caminhão {{ forloop.counter }}</div>
               <div class="grid grid-cols-1 gap-3">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Placa</label>
@@ -49,8 +55,12 @@
     </div>
 
     <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
-      <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">Salvar</button>
+      {% if is_edit %}
+        <a href="{% url 'service_orders:order_edit_step1' order.id %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+      {% else %}
+        <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+      {% endif %}
+      <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 text-secondary rounded-md">Avançar</button>
     </div>
   </form>
 </div>
@@ -75,4 +85,3 @@
   })();
 </script>
 {% endblock %}
-

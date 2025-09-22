@@ -1,13 +1,14 @@
 {% extends "core/base.html" %}
 {% load crispy_forms_tags %}
-{% block title %}Novo Pedido — Etapas{% endblock %}
+{% block title %}{% if is_edit %}Editar Pedido — Etapa{% else %}Novo Pedido — Etapas{% endif %}{% endblock %}
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-0 overflow-hidden">
   <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-    <h1 class="text-lg font-semibold text-secondary">Novo Pedido</h1>
+    <h1 class="text-lg font-semibold text-secondary">{% if is_edit %}Editar Pedido{% else %}Novo Pedido{% endif %}</h1>
     <div class="flex gap-1" aria-label="Etapas">
-      <span id="dot1" class="w-2 h-2 rounded-full bg-primary"></span>
-      <span id="dot2" class="w-2 h-2 rounded-full bg-gray-300"></span>
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+      <span class="w-2 h-2 rounded-full bg-gray-300"></span>
     </div>
   </div>
 
@@ -36,7 +37,7 @@
 
     <!-- Controles -->
     <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      <a href="{% url 'service_orders:order_list' %}"
+      <a href="{% if is_edit %}{% url 'service_orders:order_detail' order.id %}{% else %}{% url 'service_orders:order_list' %}{% endif %}"
          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
       <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 text-secondary rounded-md">Avançar</button>
     </div>

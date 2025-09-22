@@ -1,10 +1,17 @@
 {% extends "core/base.html" %}
-{% block title %}Pedidos de Serviço{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
   <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold text-secondary">Pedidos de Serviço</h1>
-    <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-primary text-secondary rounded-md shadow hover:bg-primary/90">Novo pedido</a>
+    <div>
+      <h1 class="text-2xl font-bold text-secondary">{{ title }}</h1>
+      {% if subtitle %}<div class="text-sm text-gray-600">{{ subtitle }}</div>{% endif %}
+    </div>
+    {% if new_order_for_company %}
+      <a href="{% url 'service_orders:order_create_for_company' new_order_for_company.id %}" class="px-4 py-2 bg-primary text-secondary rounded-md shadow hover:bg-primary/90">Novo pedido</a>
+    {% elif new_order_avulso %}
+      <a href="{% url 'service_orders:order_create_avulso' %}" class="px-4 py-2 bg-primary text-secondary rounded-md shadow hover:bg-primary/90">Novo pedido</a>
+    {% endif %}
   </div>
 
   {% if orders %}
@@ -15,13 +22,6 @@
             <div>
               <div class="font-medium text-gray-900">{{ order.client }} — {{ order.vehicle_plate|default:"—" }}</div>
               <div class="text-sm text-gray-600">{{ order.order_date|date:"d/m/Y" }} • Nº {{ order.service_number|default:"—" }}</div>
-              <div class="text-xs mt-0.5">
-                {% if order.company %}
-                  <span class="inline-block rounded bg-gray-100 text-gray-700 px-2 py-0.5">Empresa: {{ order.company.name }}</span>
-                {% else %}
-                  <span class="inline-block rounded bg-yellow-100 text-yellow-800 px-2 py-0.5">Pedido avulso</span>
-                {% endif %}
-              </div>
             </div>
             <div class="flex items-center gap-2">
               <a href="{% url 'service_orders:order_detail' order.id %}" class="px-3 py-1.5 text-secondary bg-gray-100 hover:bg-gray-200 rounded-md">Ver</a>
@@ -35,11 +35,11 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="text-gray-600">Nenhum pedido cadastrado ainda.</p>
+    <p class="text-gray-600">Nenhum pedido encontrado.</p>
   {% endif %}
 
-  <div class="mt-4 flex justify-end">
-    <a href="{% url 'core:home' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+  <div class="mt-4 flex justify-start">
+    <a href="{% url 'service_orders:order_list' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
   </div>
 </div>
 {% endblock %}

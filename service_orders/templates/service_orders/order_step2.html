@@ -11,11 +11,24 @@
     </div>
   </div>
 
-  <form method="post" id="step2Form">
+  <form method="post" id="step2Form" data-lock-company="{{ lock_company|yesno:'true,false' }}">
     {% csrf_token %}
 
     <div class="p-4 space-y-4">
       <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Empresa (opcional)</label>
+          {% if lock_company %}
+            <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded">{% if fixed_company %}{{ fixed_company.name }}{% else %}— Avulso{% endif %}</div>
+            {% if fixed_company %}
+              <input type="hidden" name="company" value="{{ fixed_company.id }}" />
+              <div id="fixed-company-meta" data-name="{{ fixed_company.name|escapejs }}" data-cnpj="{{ fixed_company.cnpj|escapejs }}"></div>
+            {% endif %}
+          {% else %}
+            {{ form.company }}
+            <p class="text-xs text-gray-500 mt-1">Selecione uma empresa cadastrada ou deixe em branco para pedido avulso.</p>
+          {% endif %}
+        </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Cliente</label>
           {{ form.client }}
@@ -65,23 +78,78 @@
   </form>
 </div>
 
-<script>
+  {{ companies_data|json_script:"companies-data" }}
+  <script>
   (function() {
     const countInput = document.getElementById('id_truck_count');
     const wrapper = document.getElementById('trucksWrapper');
-    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    const lockCompany = (function(){ try { return JSON.parse(document.getElementById('step2Form').getAttribute('data-lock-company')); } catch(e) { return false; } })();
 
     function updateVisible() {
+      if (!countInput || !wrapper) return;
       const n = Math.max(1, Math.min(10, parseInt(countInput.value || '1', 10)));
       const blocks = wrapper.querySelectorAll('.truck-form');
       blocks.forEach((el, idx) => {
         el.style.display = idx < n ? '' : 'none';
       });
-      if (totalForms) totalForms.value = n;
+      // Não altere TOTAL_FORMS (evita inconsistências de formset)
     }
 
-    countInput.addEventListener('input', updateVisible);
-    updateVisible();
+    if (countInput) {
+      countInput.addEventListener('input', updateVisible);
+      updateVisible();
+    }
+
+    // Sincronizar cliente/CNPJ quando uma empresa é selecionada
+    const companySelect = document.getElementById('id_company');
+    const clientInput = document.getElementById('id_client');
+    const cnpjInput = document.getElementById('id_cnpj_cpf');
+
+    // Dados de empresas via JSON seguro do Django
+    let companiesArr = [];
+    try {
+      const el = document.getElementById('companies-data');
+      if (el && el.textContent) {
+        companiesArr = JSON.parse(el.textContent);
+      }
+    } catch (e) {
+      companiesArr = [];
+    }
+    const companies = Object.fromEntries((companiesArr || []).map(c => [String(c.id), {name: c.name || '', cnpj: c.cnpj || ''}]));
+
+    function applyCompany() {
+      const val = companySelect ? companySelect.value : '';
+      if (!companySelect) return;
+      if (val) {
+        const data = companies[val];
+        if (data) {
+          clientInput.value = data.name;
+          cnpjInput.value = data.cnpj;
+        }
+        clientInput.setAttribute('readonly', 'readonly');
+        cnpjInput.setAttribute('readonly', 'readonly');
+      } else {
+        clientInput.removeAttribute('readonly');
+        cnpjInput.removeAttribute('readonly');
+      }
+    }
+    // Se a empresa estiver travada, aplica via meta
+    if (lockCompany) {
+      const meta = document.getElementById('fixed-company-meta');
+      if (meta && clientInput && cnpjInput) {
+        const n = meta.getAttribute('data-name') || '';
+        const c = meta.getAttribute('data-cnpj') || '';
+        if (n) clientInput.value = n;
+        if (c) cnpjInput.value = c;
+      }
+      if (clientInput) clientInput.setAttribute('readonly', 'readonly');
+      if (cnpjInput) cnpjInput.setAttribute('readonly', 'readonly');
+    }
+
+    if (companySelect && clientInput && cnpjInput && !lockCompany) {
+      companySelect.addEventListener('change', applyCompany);
+      applyCompany();
+    }
   })();
 </script>
 {% endblock %}

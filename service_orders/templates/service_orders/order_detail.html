@@ -9,6 +9,10 @@
   </div>
   <dl class="grid grid-cols-1 gap-4">
     <div>
+      <dt class="text-sm text-gray-500">Empresa</dt>
+      <dd class="text-gray-900">{% if order.company %}{{ order.company.name }}{% else %}— Avulso{% endif %}</dd>
+    </div>
+    <div>
       <dt class="text-sm text-gray-500">Cliente</dt>
       <dd class="text-gray-900">{{ order.client }}</dd>
     </div>

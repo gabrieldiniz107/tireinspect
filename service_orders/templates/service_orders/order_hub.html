@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+{% block title %}Pedidos{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-secondary">Pedidos</h1>
+    <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md">Fluxo livre</a>
+  </div>
+
+  <div class="space-y-4">
+    {% for c in companies %}
+      <div class="border border-gray-200 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="text-lg font-semibold text-secondary">{{ c.name }}</div>
+            <div class="flex items-center gap-4 mt-1">
+              {% if c.cnpj %}<span class="text-sm text-gray-600">CNPJ: {{ c.cnpj }}</span>{% endif %}
+              <span class="text-xs text-gray-500">{{ c.order_count }} pedidos</span>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <a href="{% url 'service_orders:order_list_company' c.id %}"
+               class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-center whitespace-nowrap">
+              Ver
+            </a>
+            <a href="{% url 'service_orders:order_create_for_company' c.id %}"
+               class="px-3 py-1.5 text-sm bg-primary text-secondary rounded-md hover:bg-primary/90 text-center whitespace-nowrap">
+              Novo
+            </a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-gray-600">Você ainda não tem empresas cadastradas. Cadastre em Empresas.</div>
+    {% endfor %}
+
+    <!-- Card Avulsos -->
+    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <div class="text-lg font-semibold text-secondary">Pedidos Avulsos</div>
+          <div class="flex items-center gap-4 mt-1">
+            <span class="text-sm text-gray-600">Sem empresa vinculada</span>
+            <span class="text-xs text-gray-500">{{ avulso_count }} pedidos</span>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <a href="{% url 'service_orders:order_list_avulso' %}"
+             class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-center whitespace-nowrap">
+            Ver
+          </a>
+          <a href="{% url 'service_orders:order_create_avulso' %}"
+             class="px-3 py-1.5 text-sm bg-primary text-secondary rounded-md hover:bg-primary/90 text-center whitespace-nowrap">
+            Novo
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 flex justify-end">
+    <a href="{% url 'core:home' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+  </div>
+</div>
+{% endblock %}

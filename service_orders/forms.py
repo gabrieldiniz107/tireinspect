@@ -2,12 +2,14 @@ from django import forms
 from django.forms import modelformset_factory, inlineformset_factory
 from django.forms.models import BaseInlineFormSet
 from .models import ServiceOrder, ServiceOrderTruck, ServiceOrderItem
+from core.models import Company
 
 
 class ServiceOrderForm(forms.ModelForm):
     class Meta:
         model = ServiceOrder
         fields = [
+            "company",
             "service_number",
             "order_date",
             "client",
@@ -39,7 +41,13 @@ class ServiceOrderStep2Form(forms.ModelForm):
 
     class Meta:
         model = ServiceOrder
-        fields = ["client", "cnpj_cpf"]
+        fields = ["company", "client", "cnpj_cpf"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # queryset será definido na view para filtrar por usuário logado
+        self.fields["company"].queryset = Company.objects.none()
+        self.fields["company"].required = False
 
 
 class ServiceOrderTruckForm(forms.ModelForm):

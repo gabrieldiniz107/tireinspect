@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import ServiceOrder, ServiceOrderTruck
+from core.models import Company
+from django.db.models import Count, Q
 from .forms import (
     ServiceOrderForm,
     ServiceOrderStep1Form,
@@ -16,8 +18,49 @@ from .utils import gerar_pedido_pdf
 
 @login_required
 def order_list(request):
-    orders = ServiceOrder.objects.filter(created_by=request.user)
-    return render(request, "service_orders/order_list.html", {"orders": orders})
+    """Hub com cards de empresas do usuário e card de pedidos avulsos."""
+    companies = (
+        Company.objects.filter(created_by=request.user)
+        .annotate(order_count=Count("service_orders", filter=Q(service_orders__created_by=request.user)))
+        .order_by("name")
+    )
+    avulso_count = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True).count()
+    return render(
+        request,
+        "service_orders/order_hub.html",
+        {"companies": companies, "avulso_count": avulso_count},
+    )
+
+
+@login_required
+def order_list_company(request, company_id):
+    company = get_object_or_404(Company, pk=company_id, created_by=request.user)
+    orders = ServiceOrder.objects.filter(created_by=request.user, company=company)
+    return render(
+        request,
+        "service_orders/order_list_filtered.html",
+        {
+            "orders": orders,
+            "title": f"Pedidos — {company.name}",
+            "subtitle": company.cnpj or "",
+            "new_order_for_company": company,
+        },
+    )
+
+
+@login_required
+def order_list_avulso(request):
+    orders = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True)
+    return render(
+        request,
+        "service_orders/order_list_filtered.html",
+        {
+            "orders": orders,
+            "title": "Pedidos Avulsos",
+            "subtitle": "Pedidos sem empresa vinculada",
+            "new_order_avulso": True,
+        },
+    )
 
 
 @login_required
@@ -40,17 +83,27 @@ def order_create_step2(request):
     if not step1:
         return redirect("service_orders:order_create")
 
+    # Verificar se veio de um card (empresa travada ou avulso)
+    locked_company_id = request.session.get("order_company_id", "__unset__")
+    lock_company = locked_company_id != "__unset__"
+    fixed_company = None
+    if lock_company and locked_company_id:
+        fixed_company = get_object_or_404(Company, pk=locked_company_id, created_by=request.user)
+
     if request.method == "POST":
         form = ServiceOrderStep2Form(request.POST)
+        form.fields["company"].queryset = Company.objects.filter(created_by=request.user)
         formset = TruckFormSet(request.POST, queryset=ServiceOrderTruck.objects.none())
         if form.is_valid() and formset.is_valid():
             truck_count = form.cleaned_data.get("truck_count") or 1
+            company = fixed_company if lock_company else form.cleaned_data.get("company")
             order = ServiceOrder(
                 created_by=request.user,
                 service_number=step1.get("service_number", ""),
                 order_date=step1.get("order_date"),
-                client=form.cleaned_data["client"],
-                cnpj_cpf=form.cleaned_data["cnpj_cpf"],
+                company=company,
+                client=(company.name if company else form.cleaned_data["client"]),
+                cnpj_cpf=(company.cnpj if company else form.cleaned_data["cnpj_cpf"]),
             )
             order.save()
 
@@ -68,12 +121,31 @@ def order_create_step2(request):
                     saved += 1
 
             request.session.pop("order_step1", None)
+            if lock_company:
+                request.session.pop("order_company_id", None)
             return redirect("service_orders:order_create_step3", order_id=order.id)
     else:
-        form = ServiceOrderStep2Form()
+        initial = {}
+        if fixed_company:
+            initial["company"] = fixed_company
+        form = ServiceOrderStep2Form(initial=initial)
+        form.fields["company"].queryset = Company.objects.filter(created_by=request.user)
         formset = TruckFormSet(queryset=ServiceOrderTruck.objects.none())
 
-    return render(request, "service_orders/order_step2.html", {"form": form, "formset": formset})
+    companies = Company.objects.filter(created_by=request.user)
+    companies_data = [{"id": c.id, "name": c.name, "cnpj": c.cnpj} for c in companies]
+    return render(
+        request,
+        "service_orders/order_step2.html",
+        {
+            "form": form,
+            "formset": formset,
+            "companies": companies,
+            "companies_data": companies_data,
+            "fixed_company": fixed_company,
+            "lock_company": lock_company,
+        },
+    )
 
 
 @login_required
@@ -150,9 +222,15 @@ def order_edit_step2(request, order_id):
 
     if request.method == "POST":
         form = ServiceOrderStep2Form(request.POST, instance=order)
+        form.fields["company"].queryset = Company.objects.filter(created_by=request.user)
         formset = TruckFormSet(request.POST, queryset=order.trucks.all())
         if form.is_valid() and formset.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+            company = form.cleaned_data.get("company")
+            if company:
+                obj.client = company.name
+                obj.cnpj_cpf = company.cnpj
+            obj.save()
             n = form.cleaned_data.get("truck_count") or initial_count
             saved_ids = []
             # Save up to n
@@ -172,9 +250,12 @@ def order_edit_step2(request, order_id):
             return redirect("service_orders:order_edit_step3", order_id=order.id)
     else:
         form = ServiceOrderStep2Form(instance=order, initial={"truck_count": initial_count})
+        form.fields["company"].queryset = Company.objects.filter(created_by=request.user)
         formset = TruckFormSet(queryset=order.trucks.all())
 
-    return render(request, "service_orders/order_step2.html", {"form": form, "formset": formset, "is_edit": True, "order": order})
+    companies = Company.objects.filter(created_by=request.user)
+    companies_data = [{"id": c.id, "name": c.name, "cnpj": c.cnpj} for c in companies]
+    return render(request, "service_orders/order_step2.html", {"form": form, "formset": formset, "is_edit": True, "order": order, "companies": companies, "companies_data": companies_data})
 
 
 @login_required
@@ -201,3 +282,17 @@ def order_edit_step3(request, order_id):
             formsets.append((t, fs))
 
     return render(request, "service_orders/order_step3.html", {"order": order, "truck_formsets": formsets, "is_edit": True})
+
+
+@login_required
+def order_create_for_company(request, company_id):
+    company = get_object_or_404(Company, pk=company_id, created_by=request.user)
+    request.session["order_company_id"] = company.id
+    return redirect("service_orders:order_create")
+
+
+@login_required
+def order_create_avulso(request):
+    # Define chave presente porém com valor falsy para travar avulso
+    request.session["order_company_id"] = None
+    return redirect("service_orders:order_create")

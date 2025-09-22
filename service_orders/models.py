@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import F, Sum, DecimalField, ExpressionWrapper
 from decimal import Decimal
+from core.models import Company
 
 User = get_user_model()
 
@@ -25,6 +26,8 @@ class ServiceOrder(models.Model):
     order_type = models.CharField("Tipo", max_length=10, choices=ORDER_TYPE_CHOICES, default="servico")
     service_number = models.CharField("Número do serviço", max_length=30, default="")
     order_date = models.DateField("Data", default=timezone.now)
+    # Vincula a uma empresa cadastrada (opcional, permite pedidos avulsos)
+    company = models.ForeignKey(Company, related_name="service_orders", on_delete=models.SET_NULL, null=True, blank=True)
     client = models.CharField("Cliente", max_length=120)
     cnpj_cpf = models.CharField("CNPJ/CPF", max_length=20)
     vehicle_plate = models.CharField("Placa do veículo", max_length=10, blank=True, default="")

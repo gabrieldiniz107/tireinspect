@@ -23,12 +23,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# Loaded from environment; defaults to True for local dev.
-load_dotenv(dotenv_path=BASE_DIR / ".env.local" if os.getenv("DEBUG", "True") == "True" else BASE_DIR / ".env")
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = ['*']
+"""
+Carregamento de variáveis de ambiente
+- Carrega primeiro .env (produção), depois .env.local (override local)
+"""
+load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.local", override=True)
+
+# Segurança / ambiente
+SECRET_KEY = os.getenv("SECRET_KEY")
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+def _split_csv(var_name: str, default: str = ""):
+    raw = os.getenv(var_name, default)
+    return [v.strip() for v in raw.split(",") if v.strip()]
+
+# Hosts e CSRF configuráveis por env
+ALLOWED_HOSTS = _split_csv("ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 
 
@@ -76,7 +87,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ROOT_URLCONF = 'tireinspect.urls'
 
-CSRF_TRUSTED_ORIGINS = ['https://tireinspect.onrender.com']
+CSRF_TRUSTED_ORIGINS = _split_csv("CSRF_TRUSTED_ORIGINS")
 
 
 TEMPLATES = [
@@ -101,24 +112,22 @@ WSGI_APPLICATION = 'tireinspect.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-""" import dj_database_url
+DATABASES = {}
+_database_url = os.getenv("DATABASE_URL")
+if _database_url:
+    import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
+    DATABASES["default"] = dj_database_url.config(
+        default=_database_url,
         conn_max_age=600,
-        ssl_require=not DEBUG  # SSL apenas em produção
+        ssl_require=os.getenv("DB_SSL_REQUIRE", "true" if not DEBUG else "false").lower()
+        == "true",
     )
-} """
-
-import dj_database_url
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+else:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
-}
 
 
 # Password validation
@@ -162,3 +171,9 @@ LOGOUT_REDIRECT_URL = "core:login"
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Cookies/HTTPS (seguro por padrão em produção)
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "true" if not DEBUG else "false").lower() == "true"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

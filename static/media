@@ -1,0 +1,16 @@
+import os, environ
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env.bool('DEBUG', False)
+ALLOWED_HOSTS = [h.strip() for h in env('ALLOWED_HOSTS').split(',')]
+CSRF_TRUSTED_ORIGINS = [h.strip() for h in env('CSRF_TRUSTED_ORIGINS').split(',')] if env('CSRF_TRUSTED_ORIGINS', default='') else []
+
+STATIC_URL = '/static/'
+MEDIA_URL  = '/media/'
+STATIC_ROOT = env('DJ_STATIC_ROOT', default=os.path.join(BASE_DIR, 'staticfiles'))
+MEDIA_ROOT  = env('DJ_MEDIA_ROOT', default=os.path.join(BASE_DIR, 'mediafiles'))

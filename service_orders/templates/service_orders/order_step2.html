@@ -34,7 +34,7 @@
           {{ form.client }}
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700">CNPJ/CPF</label>
+          <label class="block text-sm font-medium text-gray-700">CNPJ</label>
           {{ form.cnpj_cpf }}
         </div>
         <div>
@@ -61,6 +61,24 @@
                   {{ f.fleet }}
                 </div>
               </div>
+              {% with obs_val=f.observation.value price_val=f.observation_price.value %}
+              <div class="mt-3 border-t border-dashed border-gray-200 pt-3">
+                <button type="button" class="text-sm font-medium text-primary hover:text-secondary transition-colors" data-obs-toggle aria-expanded="{% if obs_val or price_val %}true{% else %}false{% endif %}">
+                  <span data-obs-toggle-label>{% if obs_val or price_val %}Ocultar observação{% else %}Incluir observação{% endif %}</span>
+                </button>
+                <div class="mt-3 space-y-2 {% if not obs_val and not price_val %}hidden{% endif %}" data-obs-fields>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Observação</label>
+                    {{ f.observation }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Valor da observação</label>
+                    {{ f.observation_price }}
+                    <p class="text-xs text-gray-500 mt-1">Deixe em branco para não adicionar valor extra.</p>
+                  </div>
+                </div>
+              </div>
+              {% endwith %}
             </div>
           {% endfor %}
         </div>
@@ -125,6 +143,9 @@
         if (data) {
           clientInput.value = data.name;
           cnpjInput.value = data.cnpj;
+          if (window.applyCnpjMask) {
+            window.applyCnpjMask(cnpjInput);
+          }
         }
         clientInput.setAttribute('readonly', 'readonly');
         cnpjInput.setAttribute('readonly', 'readonly');
@@ -141,15 +162,49 @@
         const c = meta.getAttribute('data-cnpj') || '';
         if (n) clientInput.value = n;
         if (c) cnpjInput.value = c;
+        if (window.applyCnpjMask) {
+          window.applyCnpjMask(cnpjInput);
+        }
+        clientInput.setAttribute('readonly', 'readonly');
+        cnpjInput.setAttribute('readonly', 'readonly');
+      } else {
+        if (clientInput) clientInput.removeAttribute('readonly');
+        if (cnpjInput) cnpjInput.removeAttribute('readonly');
       }
-      if (clientInput) clientInput.setAttribute('readonly', 'readonly');
-      if (cnpjInput) cnpjInput.setAttribute('readonly', 'readonly');
     }
 
     if (companySelect && clientInput && cnpjInput && !lockCompany) {
       companySelect.addEventListener('change', applyCompany);
       applyCompany();
     }
+
+    function initObservationToggles() {
+      const forms = document.querySelectorAll('.truck-form');
+      forms.forEach(function (form) {
+        const toggle = form.querySelector('[data-obs-toggle]');
+        const fields = form.querySelector('[data-obs-fields]');
+        if (!toggle || !fields) return;
+        const label = toggle.querySelector('[data-obs-toggle-label]');
+
+        function setState(open) {
+          fields.classList.toggle('hidden', !open);
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (label) {
+            label.textContent = open ? 'Ocultar observação' : 'Incluir observação';
+          }
+        }
+
+        let isOpen = !fields.classList.contains('hidden');
+        setState(isOpen);
+
+        toggle.addEventListener('click', function () {
+          isOpen = !fields.classList.contains('hidden');
+          setState(!isOpen);
+        });
+      });
+    }
+
+    initObservationToggles();
   })();
 </script>
 {% endblock %}

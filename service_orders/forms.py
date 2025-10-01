@@ -24,6 +24,18 @@ class ServiceOrderForm(forms.ModelForm):
 
         widgets = {
             "order_date": forms.DateInput(attrs={"type": "date"}),
+            "cnpj_cpf": forms.TextInput(
+                attrs={
+                    "data-mask-cnpj": "true",
+                    "placeholder": "00.000.000/0000-00",
+                    "maxlength": "18",
+                    "inputmode": "numeric",
+                    "autocomplete": "off",
+                }
+            ),
+        }
+        labels = {
+            "cnpj_cpf": "CNPJ",
         }
 
 
@@ -48,12 +60,41 @@ class ServiceOrderStep2Form(forms.ModelForm):
         # queryset será definido na view para filtrar por usuário logado
         self.fields["company"].queryset = Company.objects.none()
         self.fields["company"].required = False
+        self.fields["client"].required = False
+        self.fields["cnpj_cpf"].label = "CNPJ"
+        self.fields["cnpj_cpf"].required = False
+        self.fields["cnpj_cpf"].widget.attrs.update(
+            {
+                "data-mask-cnpj": "true",
+                "placeholder": "00.000.000/0000-00",
+                "maxlength": "18",
+                "inputmode": "numeric",
+                "autocomplete": "off",
+            }
+        )
 
 
 class ServiceOrderTruckForm(forms.ModelForm):
     class Meta:
         model = ServiceOrderTruck
-        fields = ["plate", "fleet"]
+        fields = ["plate", "fleet", "observation", "observation_price"]
+        widgets = {
+            "observation": forms.Textarea(
+                attrs={
+                    "rows": 2,
+                    "class": "w-full",
+                    "placeholder": "Descreva a observação deste caminhão",
+                }
+            ),
+            "observation_price": forms.NumberInput(
+                attrs={
+                    "step": "0.01",
+                    "min": "0",
+                    "class": "w-full",
+                    "placeholder": "0,00",
+                }
+            ),
+        }
 
 
 TruckFormSet = modelformset_factory(

@@ -19,6 +19,17 @@ class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
         fields = ["name", "cnpj", "contact"]
+        widgets = {
+            "cnpj": forms.TextInput(
+                attrs={
+                    "data-mask-cnpj": "true",
+                    "placeholder": "00.000.000/0000-00",
+                    "maxlength": "18",
+                    "inputmode": "numeric",
+                    "autocomplete": "off",
+                }
+            )
+        }
 
 class TruckForm(forms.ModelForm):
     class Meta:

@@ -50,13 +50,17 @@ class ServiceOrder(models.Model):
     def total_amount(self):
         expr = ExpressionWrapper(F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=12, decimal_places=2))
         agg = self.items.aggregate(total=Sum(expr))
-        return agg.get("total") or Decimal("0.00")
+        service_total = agg.get("total") or Decimal("0.00")
+        observation_total = self.trucks.aggregate(total=Sum("observation_price")).get("total") or Decimal("0.00")
+        return service_total + observation_total
 
 
 class ServiceOrderTruck(models.Model):
     order = models.ForeignKey(ServiceOrder, related_name="trucks", on_delete=models.CASCADE)
     plate = models.CharField("Placa", max_length=10)
     fleet = models.CharField("Frota", max_length=50, blank=True, default="")
+    observation = models.TextField("Observação", blank=True, default="")
+    observation_price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -73,6 +77,11 @@ class ServiceOrderItem(models.Model):
         (3, "Borracharia"),
         (4, "Socorro"),
         (5, "Balanceamento"),
+        (6, "Destravamento de tirante"),
+        (7, "Destravamento de barra"),
+        (8, "Consultoria técnica"),
+        (9, "Troca de pivô"),
+        (10, "Desempeno de barra"),
     )
 
     order = models.ForeignKey(ServiceOrder, related_name="items", on_delete=models.CASCADE)

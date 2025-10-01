@@ -8,6 +8,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Table, TableStyle
 from django.utils import formats
 from django.conf import settings
+from textwrap import wrap
 import os
 
 
@@ -133,9 +134,12 @@ def gerar_pedido_pdf(order):
         content_width * 0.20   # Total - 20%
     ]
 
-    def draw_services_table(items, truck_label=None):
+    def draw_services_table(items, truck=None, truck_label=None):
         nonlocal y
-        
+
+        if truck is not None and not truck_label:
+            truck_label = f"Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
+
         if truck_label:
             ensure_space(8 * mm)
             # Cabeçalho do caminhão simples (sem emojis nem destaques)
@@ -146,13 +150,41 @@ def gerar_pedido_pdf(order):
             c.drawString(margin_left + 3 * mm, y + 1.5 * mm, truck_label)
             y -= 10 * mm
 
+        subtotal = 0.0
+
+        if truck and truck.observation_price:
+            try:
+                subtotal += float(truck.observation_price)
+            except (TypeError, ValueError):
+                subtotal += 0.0
+
+        if truck and (truck.observation or truck.observation_price is not None):
+            ensure_space(6 * mm)
+            if truck.observation:
+                c.setFont("Helvetica-Oblique", 8)
+                c.setFillColor(colors.grey)
+                lines = wrap(truck.observation, 90) or [truck.observation]
+                for idx, line in enumerate(lines):
+                    prefix = "Observação: " if idx == 0 else ""
+                    c.drawString(margin_left + 3 * mm, y, f"{prefix}{line}")
+                    y -= 5 * mm
+                    ensure_space(5 * mm)
+            if truck.observation_price is not None:
+                c.setFillColor(cor_sec)
+                c.setFont("Helvetica", 8)
+                c.drawString(margin_left + 3 * mm, y, f"Valor observação: {format_money(truck.observation_price)}")
+                y -= 6 * mm
+                ensure_space(6 * mm)
+            c.setFillColor(cor_sec)
+            c.setFont("Helvetica", 8)
+
         if not items:
             ensure_space(6 * mm)
             c.setFont("Helvetica-Oblique", 9)
             c.setFillColor(colors.grey)
             c.drawString(margin_left + 3 * mm, y, "— Nenhum serviço cadastrado")
             y -= 8 * mm
-            return 0.0
+            return subtotal
 
         # Cabeçalho da tabela
         ensure_space(8 * mm)
@@ -173,10 +205,9 @@ def gerar_pedido_pdf(order):
         y -= 8 * mm
 
         # Linhas da tabela
-        subtotal = 0.0
         c.setFillColor(cor_sec)
         c.setFont("Helvetica", 8)
-        
+
         for i, item in enumerate(items):
             ensure_space(6 * mm)
             
@@ -219,7 +250,7 @@ def gerar_pedido_pdf(order):
             # Label do caminhão sem emoji e sem destaque especial
             truck_label = f"Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
             items = list(truck.items.all())
-            subtotal = draw_services_table(items, truck_label)
+            subtotal = draw_services_table(items, truck=truck, truck_label=truck_label)
             total_geral += subtotal
     else:
         ensure_space(8 * mm)

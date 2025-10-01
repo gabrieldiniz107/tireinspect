@@ -45,8 +45,19 @@
             </svg>
           </div>
           <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}" 
-                 class="pl-10 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
+                 class="pl-10 pr-12 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
                  placeholder="Senha" required>
+          <button type="button" data-toggle-password data-target="{{ form.password.id_for_label }}"
+                  class="absolute inset-y-0 right-2 px-2 flex items-center text-gray-400 hover:text-secondary focus:outline-none"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <svg data-icon-show class="hidden h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5s8.577 3.01 9.964 7.178c.07.207.07.437 0 .644C20.577 16.49 16.64 19.5 12 19.5S3.423 16.49 2.036 12.322z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <svg data-icon-hide class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223C5.703 6.3 8.53 4.5 12 4.5c4.64 0 8.577 3.01 9.964 7.178.07.207.07.437 0 .644-.747 2.228-2.294 4.125-4.337 5.437M9.53 6.47A7.473 7.473 0 0112 6c2.528 0 4.79 1.094 6.38 2.834M15 12a3 3 0 00-3-3m0 0a2.99 2.99 0 00-1.354.322M12 9a3 3 0 010 6m0 0a2.99 2.99 0 001.354-.322M12 15a3 3 0 01-3-3m4.5 8.25L3 3m17.25 17.25L4.5 7.5" />
+            </svg>
+          </button>
         </div>
         {% if form.password.errors %}
           <p class="text-red-600 text-xs italic mt-1">{{ form.password.errors.0 }}</p>
@@ -85,4 +96,31 @@
     </div>
   </div>
 </div>
+<script>
+  (function () {
+    const toggles = document.querySelectorAll('[data-toggle-password]');
+    if (!toggles.length) return;
+
+    toggles.forEach(function (toggle) {
+      const targetId = toggle.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (!input) return;
+
+      const showIcon = toggle.querySelector('[data-icon-show]');
+      const hideIcon = toggle.querySelector('[data-icon-hide]');
+
+      toggle.addEventListener('click', function () {
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        const isVisible = input.type === 'text';
+        toggle.setAttribute('aria-pressed', String(isVisible));
+        toggle.setAttribute('aria-label', isVisible ? 'Ocultar senha' : 'Mostrar senha');
+        if (showIcon && hideIcon) {
+          showIcon.classList.toggle('hidden', !isVisible);
+          hideIcon.classList.toggle('hidden', isVisible);
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}

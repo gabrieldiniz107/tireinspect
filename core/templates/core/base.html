@@ -32,5 +32,77 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  <script>
+    (function () {
+      function formatCnpjDigits(digits) {
+        const numbers = (digits || "").replace(/\D/g, "").slice(0, 14);
+        const parts = [];
+        if (numbers.length > 0) {
+          parts.push(numbers.slice(0, 2));
+        }
+        if (numbers.length >= 3) {
+          parts.push(numbers.slice(2, 5));
+        }
+        if (numbers.length >= 6) {
+          parts.push(numbers.slice(5, 8));
+        }
+        let formatted = "";
+        if (parts.length) {
+          formatted = parts.join(".");
+        }
+        if (numbers.length >= 9) {
+          formatted += "/" + numbers.slice(8, 12);
+        }
+        if (numbers.length >= 13) {
+          formatted += "-" + numbers.slice(12, 14);
+        }
+        return { formatted, raw: numbers };
+      }
+
+      function applyMask(input, preserveCursor) {
+        if (!input) return;
+        const selectionEnd = input.selectionEnd;
+        const { formatted, raw } = formatCnpjDigits(input.value);
+        input.value = formatted;
+        input.dataset.cnpjRaw = raw;
+        if (preserveCursor) {
+          const newPosition = input.value.length;
+          requestAnimationFrame(function () {
+            try {
+              input.setSelectionRange(newPosition, newPosition);
+            } catch (e) {
+              /* noop */
+            }
+          });
+        }
+      }
+
+      function onInput(event) {
+        applyMask(event.target, true);
+      }
+
+      function enhanceInput(input) {
+        if (input.dataset.cnpjMaskApplied) return;
+        input.dataset.cnpjMaskApplied = "true";
+        applyMask(input, false);
+        input.addEventListener("input", onInput);
+        input.addEventListener("blur", onInput);
+      }
+
+      function initMasking(root) {
+        (root || document).querySelectorAll('[data-mask-cnpj]').forEach(enhanceInput);
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        initMasking(document);
+      });
+
+      window.applyCnpjMask = function (input) {
+        if (!input) return;
+        enhanceInput(input);
+        applyMask(input, false);
+      };
+    })();
+  </script>
 </body>
 </html>

@@ -115,10 +115,14 @@ def order_create_step2(request):
                 if not f.cleaned_data:
                     continue
                 plate = f.cleaned_data.get("plate")
-                fleet = f.cleaned_data.get("fleet")
-                if plate:
-                    order.trucks.create(plate=plate, fleet=fleet or "")
-                    saved += 1
+                if not plate:
+                    continue
+                truck = f.save(commit=False)
+                truck.order = order
+                if truck.fleet is None:
+                    truck.fleet = ""
+                truck.save()
+                saved += 1
 
             request.session.pop("order_step1", None)
             if lock_company:

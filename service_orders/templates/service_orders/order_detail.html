@@ -31,6 +31,12 @@
             <div>
               <div class="font-medium text-gray-900">Placa: {{ t.plate }}</div>
               <div class="text-sm text-gray-600">Frota: {{ t.fleet|default:"—" }}</div>
+              {% if t.observation %}
+                <div class="text-sm text-gray-600 mt-1">Observação: {{ t.observation }}</div>
+              {% endif %}
+              {% if t.observation_price is not None %}
+                <div class="text-sm text-gray-600">Valor observação: R$ {{ t.observation_price|floatformat:2 }}</div>
+              {% endif %}
             </div>
           </li>
         {% endfor %}
@@ -46,6 +52,16 @@
           {% for t in trucks %}
             <div class="border border-gray-200 rounded-md">
               <div class="px-3 py-2 bg-gray-50 text-sm font-semibold text-secondary">Placa {{ t.plate }}{% if t.fleet %} • Frota {{ t.fleet }}{% endif %}</div>
+              {% if t.observation or t.observation_price is not None %}
+                <div class="px-3 py-2 text-sm text-gray-700 border-b border-gray-100 space-y-1">
+                  {% if t.observation %}
+                    <div><span class="font-medium">Observação:</span> {{ t.observation }}</div>
+                  {% endif %}
+                  {% if t.observation_price is not None %}
+                    <div><span class="font-medium">Valor observação:</span> R$ {{ t.observation_price|floatformat:2 }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
               {% if t.items.all %}
                 <table class="min-w-full">
                   <thead>

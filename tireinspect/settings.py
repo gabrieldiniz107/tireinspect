@@ -7,12 +7,17 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent          # /home/deploy/apps/tireinspect
 PROJECT_DIR = Path(__file__).resolve().parent              # /home/deploy/apps/tireinspect/tireinspect
 
-# Carregar .env (se python-dotenv estiver instalado)
+# Carregar .env e .env.local (se python-dotenv estiver instalado)
 try:
     from dotenv import load_dotenv  # pip install python-dotenv (opcional)
+    # Base: .env (produção/padrão)
     load_dotenv(PROJECT_DIR / '.env')
     load_dotenv(BASE_DIR / '.env')
     load_dotenv(BASE_DIR.parent / '.env')
+    # Overrides locais: .env.local (aplicado por último com override=True)
+    load_dotenv(PROJECT_DIR / '.env.local', override=True)
+    load_dotenv(BASE_DIR / '.env.local', override=True)
+    load_dotenv(BASE_DIR.parent / '.env.local', override=True)
 except Exception:
     # Se não houver python-dotenv, as variáveis podem vir do ambiente do sistema
     pass
@@ -131,7 +136,8 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Segurança / HTTPS (atrás do Nginx/Certbot)
-SECURE_SSL_REDIRECT = _get_bool("SECURE_SSL_REDIRECT", False)
+# Em desenvolvimento (DEBUG=True), nunca forçar HTTPS para evitar erro do runserver.
+SECURE_SSL_REDIRECT = (not DEBUG) and _get_bool("SECURE_SSL_REDIRECT", False)
 # Honra X-Forwarded-Proto enviado pelo Nginx
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

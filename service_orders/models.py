@@ -36,6 +36,8 @@ class ServiceOrder(models.Model):
     cep = models.CharField("CEP", max_length=10, blank=True, default="")
     fleet = models.CharField("Frota", max_length=50, blank=True)
     model = models.CharField("Modelo", max_length=80, blank=True)
+    # Controle de salvamento: pedidos em rascunho não aparecem nas listagens
+    is_draft = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

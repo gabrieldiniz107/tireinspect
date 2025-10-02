@@ -21,10 +21,13 @@ def order_list(request):
     """Hub com cards de empresas do usuário e card de pedidos avulsos."""
     companies = (
         Company.objects.filter(created_by=request.user)
-        .annotate(order_count=Count("service_orders", filter=Q(service_orders__created_by=request.user)))
+        .annotate(order_count=Count(
+            "service_orders",
+            filter=Q(service_orders__created_by=request.user, service_orders__is_draft=False),
+        ))
         .order_by("name")
     )
-    avulso_count = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True).count()
+    avulso_count = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True, is_draft=False).count()
     return render(
         request,
         "service_orders/order_hub.html",
@@ -35,7 +38,7 @@ def order_list(request):
 @login_required
 def order_list_company(request, company_id):
     company = get_object_or_404(Company, pk=company_id, created_by=request.user)
-    orders = ServiceOrder.objects.filter(created_by=request.user, company=company)
+    orders = ServiceOrder.objects.filter(created_by=request.user, company=company, is_draft=False)
     return render(
         request,
         "service_orders/order_list_filtered.html",
@@ -50,7 +53,7 @@ def order_list_company(request, company_id):
 
 @login_required
 def order_list_avulso(request):
-    orders = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True)
+    orders = ServiceOrder.objects.filter(created_by=request.user, company__isnull=True, is_draft=False)
     return render(
         request,
         "service_orders/order_list_filtered.html",
@@ -104,6 +107,7 @@ def order_create_step2(request):
                 company=company,
                 client=(company.name if company else form.cleaned_data["client"]),
                 cnpj_cpf=(company.cnpj if company else form.cleaned_data["cnpj_cpf"]),
+                is_draft=True,
             )
             order.save()
 
@@ -155,6 +159,9 @@ def order_create_step2(request):
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(ServiceOrder, pk=order_id, created_by=request.user)
+    # Se ainda é rascunho, redireciona para a etapa de serviços (passo 3) para finalizar
+    if getattr(order, "is_draft", False):
+        return redirect("service_orders:order_create_step3", order_id=order.id)
     trucks = order.trucks.all().prefetch_related("items")
     unassigned = order.items.filter(truck__isnull=True)
     return render(request, "service_orders/order_detail.html", {"order": order, "trucks": trucks, "unassigned_items": unassigned})
@@ -178,6 +185,10 @@ def order_create_step3(request, order_id):
         if all_valid:
             for _, fs in formsets:
                 fs.save()
+            # Finaliza o pedido ao salvar os serviços
+            if getattr(order, "is_draft", False):
+                order.is_draft = False
+                order.save(update_fields=["is_draft"])
             return redirect("service_orders:order_detail", order_id=order.id)
     else:
         for t in trucks:

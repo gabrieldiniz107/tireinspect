@@ -34,7 +34,14 @@ class CompanyForm(forms.ModelForm):
 class TruckForm(forms.ModelForm):
     class Meta:
         model = Truck
-        fields = ["truck_type", "plate", "brand", "model", "hodometer"]
+        fields = ["truck_type", "plate", "fleet", "brand", "model", "hodometer"]
+
+
+class TruckEditForm(forms.ModelForm):
+    class Meta:
+        model = Truck
+        # Editáveis: placa, marca, modelo e frota (tipo permanece bloqueado)
+        fields = ["plate", "brand", "model", "fleet"]
 
 class InspectionForm(forms.ModelForm):
     class Meta:

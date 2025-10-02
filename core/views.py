@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 from django.forms import inlineformset_factory
 
 from .models import Company, Truck, Inspection, Tire
-from .forms import CompanyForm, TruckForm, InspectionForm, TireFormSet, UserRegisterForm
+from .forms import CompanyForm, TruckForm, TruckEditForm, InspectionForm, TireFormSet, UserRegisterForm
 
 
 def index(request):
@@ -49,7 +50,7 @@ def company_create(request):
         obj.created_by = request.user
         obj.save()
         return redirect("core:company_list")
-    return render(request, "core/form.html", {"form": form, "title": "Nova empresa"})
+    return render(request, "core/form.html", {"form": form, "title": "Nova empresa", "back_url": reverse("core:company_list")})
 
 
 @login_required
@@ -84,8 +85,39 @@ def truck_create(request, company_id):
             return redirect("core:truck_list", company_id=company.id)
     return render(request, "core/form.html", {
         "form": form,
-        "title": f"Adicionar caminhão – {company.name}"
+        "title": f"Adicionar caminhão – {company.name}",
+        "back_url": reverse("core:truck_list", kwargs={"company_id": company.id}),
     })
+
+
+@login_required
+def truck_edit(request, truck_id):
+    truck = get_object_or_404(Truck, pk=truck_id, company__created_by=request.user)
+    company = truck.company
+    form = TruckEditForm(request.POST or None, instance=truck)
+    if request.method == "POST" and form.is_valid():
+        # Garantir unicidade da placa por empresa
+        plate = form.cleaned_data["plate"]
+        exists = Truck.objects.filter(company=company, plate__iexact=plate).exclude(id=truck.id).exists()
+        if exists:
+            form.add_error("plate", "Já existe um caminhão com essa placa nesta empresa.")
+        else:
+            form.save()
+            return redirect("core:truck_list", company_id=company.id)
+    return render(request, "core/form.html", {
+        "form": form,
+        "title": f"Editar caminhão – {truck.plate}",
+        "back_url": reverse("core:truck_list", kwargs={"company_id": company.id}),
+    })
+
+
+@login_required
+@require_POST
+def truck_delete(request, truck_id):
+    truck = get_object_or_404(Truck, pk=truck_id, company__created_by=request.user)
+    company_id = truck.company_id
+    truck.delete()
+    return redirect("core:truck_list", company_id=company_id)
 
 
 # ---------------------------------------------------------

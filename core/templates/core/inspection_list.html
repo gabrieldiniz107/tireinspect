@@ -92,7 +92,7 @@
   <!-- Botão para adicionar nova inspeção -->
   <div class="flex flex-col sm:flex-row gap-3 mb-6">  
     <!-- Botão Voltar -->
-    <a href="javascript:history.back()"
+    <a href="{% url 'core:truck_list' truck.company.id %}"
        class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-secondary
               font-medium rounded-md shadow-sm transition-colors flex items-center justify-center w-full sm:w-auto">
       <svg xmlns="http://www.w3.org/2000/svg"

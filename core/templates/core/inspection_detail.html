@@ -95,7 +95,7 @@
 
   <!-- Botões Voltar / Gerar PDF -->
   <div class="mt-6 flex flex-col sm:flex-row justify-between gap-3">
-    <a href="javascript:history.back()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md flex items-center justify-center shadow-sm transition-colors">
+    <a href="{% url 'core:inspection_list' inspection.truck.id %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md flex items-center justify-center shadow-sm transition-colors">
       Voltar
     </a>
     <a href="{% url 'reports:inspection_pdf' inspection.id %}" class="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-md flex items-center justify-center shadow-sm transition-colors">

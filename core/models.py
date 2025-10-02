@@ -41,6 +41,7 @@ class Truck(models.Model):
                                     on_delete=models.CASCADE)
     truck_type  = models.ForeignKey(TruckType, on_delete=models.PROTECT)
     plate       = models.CharField("Placa", max_length=10)
+    fleet       = models.CharField("Frota", max_length=50, blank=True, default="")
     brand       = models.CharField("Marca", max_length=50, blank=True)
     model       = models.CharField("Modelo", max_length=50, blank=True)
     hodometer   = models.PositiveIntegerField("Hodômetro", null=True, blank=True)

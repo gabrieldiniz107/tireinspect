@@ -138,14 +138,22 @@
 <script>
   (function() {
     const btn = document.getElementById('emitirPedido');
-    if (btn) {
-      btn.addEventListener('click', function(e) {
-        const ok = confirm('Deseja prosseguir para a emissão do pedido?');
-        if (!ok) {
-          e.preventDefault();
-        }
-      });
-    }
+    if (!btn) return;
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const ok = confirm('Deseja prosseguir para a emissão do pedido?');
+      if (!ok) return;
+      // Sugerir nome: Empresa/Cliente + pedido + número + data
+      const company = "{{ order.company.name|default:order.client|escapejs }}";
+      const num = "{{ order.service_number|default:order.id|escapejs }}";
+      const dateStr = '{{ order.order_date|date:"Y-m-d" }}';
+      const suggested = `${company}__pedido_${num}__${dateStr}.pdf`;
+      const name = prompt('Editar nome do arquivo PDF:', suggested);
+      if (name === null) return; // cancel
+      const url = new URL(btn.getAttribute('href'), window.location.origin);
+      url.searchParams.set('filename', name);
+      window.location.href = url.toString();
+    });
   })();
   </script>
 {% endblock %}

@@ -14,6 +14,7 @@ from .forms import (
 )
 from django.http import HttpResponse
 from .utils import gerar_pedido_pdf
+import re
 
 
 @login_required
@@ -203,7 +204,25 @@ def order_pdf(request, order_id):
     order = get_object_or_404(ServiceOrder, pk=order_id, created_by=request.user)
     pdf_bytes = gerar_pedido_pdf(order)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    filename = f"pedido_{order.id}.pdf"
+    # Build default filename: <EmpresaOuCliente>__pedido_<NumeroOuID>__<Data>.pdf
+    company_or_client = (order.company.name if order.company else order.client) or "Empresa"
+    num = order.service_number or str(order.id)
+    date_str = order.order_date.isoformat()
+    default_name = f"{company_or_client}__pedido_{num}__{date_str}.pdf"
+    # Sanitize helper (duplicate minimal logic to avoid import cycle)
+    _SAFE_CHARS_RE = re.compile(r"[^A-Za-z0-9._\- ]+")
+    def _sanitize(name: str, default: str) -> str:
+        name = (name or "").strip()
+        if not name:
+            return default
+        name = name.replace("/", "_").replace("\\", "_").replace("\0", "_")
+        name = _SAFE_CHARS_RE.sub("_", name)
+        name = re.sub(r"\s+", " ", name).strip()
+        if not name.lower().endswith(".pdf"):
+            name += ".pdf"
+        return name
+    requested = request.GET.get("filename")
+    filename = _sanitize(requested, default_name)
     response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 

@@ -72,7 +72,7 @@
               </th>
               <th class="p-3 text-left border border-gray-200">Data</th>
               <th class="p-3 text-left border border-gray-200">Caminhão</th>
-              <th class="p-3 text-left border border-gray-200">Hodômetro</th>
+              <th class="p-3 text-left border border-gray-200">Frota</th>
               <th class="p-3 text-left border border-gray-200">Ações</th>
             </tr>
           </thead>
@@ -86,7 +86,7 @@
                 </td>
                 <td class="p-3 border border-gray-200">{{ insp.date|date:"d/m/Y" }}</td>
                 <td class="p-3 border border-gray-200">{{ insp.truck.plate }}</td>
-                <td class="p-3 border border-gray-200">{{ insp.odometer|default:"—" }}</td>
+                <td class="p-3 border border-gray-200">{{ insp.truck.fleet|default:"—" }}</td>
                 <td class="p-3 border border-gray-200">
                   <a href="{% url 'reports:inspection_pdf' insp.id %}"
                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100">

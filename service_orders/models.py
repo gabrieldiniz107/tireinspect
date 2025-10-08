@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db.models import F, Sum, DecimalField, ExpressionWrapper
+from django.db.models import F, Sum, DecimalField, ExpressionWrapper, Max
 from decimal import Decimal
 from core.models import Company
 
@@ -64,12 +64,41 @@ class ServiceOrderTruck(models.Model):
     observation = models.TextField("Observação", blank=True, default="")
     observation_price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Novo: numeração sequencial por usuário (começa em 3000)
+    # Guardamos também o usuário para permitir unicidade por usuário
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True)
+    truck_number = models.PositiveIntegerField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(fields=["created_by", "truck_number"], name="uniq_truck_number_per_user")
+        ]
 
     def __str__(self):
         return self.plate
+
+    def save(self, *args, **kwargs):
+        # Vincular created_by a partir da ordem, se não estiver setado
+        if not self.created_by and getattr(self, "order_id", None):
+            try:
+                # Evitar reconsulta se já possui instância
+                order_obj = getattr(self, "order", None)
+                self.created_by = (order_obj.created_by if order_obj else ServiceOrder.objects.only("created_by").get(id=self.order_id).created_by)
+            except Exception:
+                pass
+
+        # Atribuir número sequencial por usuário, iniciando em 3000
+        if self.truck_number is None and self.created_by_id:
+            last = (
+                ServiceOrderTruck.objects
+                .filter(created_by=self.created_by, truck_number__isnull=False)
+                .aggregate(m=Max("truck_number"))
+                .get("m")
+            )
+            self.truck_number = (last + 1) if last is not None else 3000
+
+        super().save(*args, **kwargs)
 
 
 class ServiceOrderItem(models.Model):

@@ -42,10 +42,21 @@ class ServiceOrderForm(forms.ModelForm):
 class ServiceOrderStep1Form(forms.ModelForm):
     class Meta:
         model = ServiceOrder
-        fields = ["service_number", "order_date"]
+        fields = ["order_date"]
         widgets = {
             "order_date": forms.DateInput(attrs={"type": "date"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        from django.utils import timezone
+        super().__init__(*args, **kwargs)
+        # Define a data atual como padrão (form não vinculado e sem instance nova)
+        if not self.is_bound:
+            has_instance = hasattr(self, "instance") and getattr(self.instance, "pk", None)
+            if not has_instance and not self.initial.get("order_date"):
+                today = timezone.localdate()
+                self.initial["order_date"] = today
+                self.fields["order_date"].initial = today
 
 
 class ServiceOrderStep2Form(forms.ModelForm):

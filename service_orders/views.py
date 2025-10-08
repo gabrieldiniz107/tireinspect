@@ -69,11 +69,14 @@ def order_list_avulso(request):
 
 @login_required
 def order_create(request):
-    """Etapa 1: tipo/número/data."""
-    form = ServiceOrderStep1Form(request.POST or None)
+    """Etapa 1: Data do pedido (número removido)."""
+    if request.method == "POST":
+        form = ServiceOrderStep1Form(request.POST)
+    else:
+        from django.utils import timezone
+        form = ServiceOrderStep1Form(initial={"order_date": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
         request.session["order_step1"] = {
-            "service_number": form.cleaned_data["service_number"],
             "order_date": str(form.cleaned_data["order_date"]),
         }
         return redirect("service_orders:order_create_step2")
@@ -103,7 +106,6 @@ def order_create_step2(request):
             company = fixed_company if lock_company else form.cleaned_data.get("company")
             order = ServiceOrder(
                 created_by=request.user,
-                service_number=step1.get("service_number", ""),
                 order_date=step1.get("order_date"),
                 company=company,
                 client=(company.name if company else form.cleaned_data["client"]),

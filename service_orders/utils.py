@@ -53,7 +53,7 @@ def gerar_pedido_pdf(order):
         c.drawString(margin_left + 40 * mm, height - 28 * mm, HEADER_CNPJ)
         c.drawString(margin_left + 40 * mm, height - 32 * mm, HEADER_WHATS)
         
-        # Informações da ordem (sem destaque)
+        # Informações da ordem: número e data
         c.setFont("Helvetica", 10)
         c.drawString(margin_left + 40 * mm, height - 40 * mm, f"Nº do pedido: {order.service_number or '—'}")
         data_fmt = formats.date_format(order.order_date, "DATE_FORMAT") if order.order_date else "—"
@@ -169,7 +169,9 @@ def gerar_pedido_pdf(order):
         nonlocal y
 
         if truck is not None and not truck_label:
-            truck_label = f"Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
+            num = getattr(truck, "truck_number", None)
+            num_str = f"Nº {num}" if num is not None else "Nº —"
+            truck_label = f"{num_str}  •  Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
 
         if truck_label:
             ensure_space(8 * mm)
@@ -336,8 +338,10 @@ def gerar_pedido_pdf(order):
 
     if trucks:
         for truck in trucks:
-            # Label do caminhão sem emoji e sem destaque especial
-            truck_label = f"Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
+            # Label do caminhão com numeração sequencial por usuário
+            num = getattr(truck, "truck_number", None)
+            num_str = f"Nº {num}" if num is not None else "Nº —"
+            truck_label = f"{num_str}  •  Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
             items = list(truck.items.all())
             subtotal = draw_services_table(items, truck=truck, truck_label=truck_label)
             total_geral += subtotal

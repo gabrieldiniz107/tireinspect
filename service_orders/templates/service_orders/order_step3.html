@@ -19,7 +19,7 @@
       {% for truck, formset in truck_formsets %}
         <div class="border border-gray-200 rounded-lg overflow-hidden h-[60vh] flex flex-col" data-truck-card data-prefix="{{ formset.prefix }}">
           <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
-            <div class="text-sm font-semibold text-secondary">Caminhão — Placa {{ truck.plate }}{% if truck.fleet %} • Frota {{ truck.fleet }}{% endif %}</div>
+            <div class="text-sm font-semibold text-secondary">Caminhão Nº {{ truck.truck_number|default:"—" }} — Placa {{ truck.plate }}{% if truck.fleet %} • Frota {{ truck.fleet }}{% endif %}</div>
             <button type="button" class="text-sm px-3 py-1 rounded-md bg-primary text-secondary hover:bg-primary/90" data-add-row>Adicionar serviço</button>
           </div>
 

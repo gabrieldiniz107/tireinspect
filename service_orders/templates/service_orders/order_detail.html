@@ -29,7 +29,7 @@
         {% for t in order.trucks.all %}
           <li class="py-2 flex items-center justify-between">
             <div>
-              <div class="font-medium text-gray-900">Placa: {{ t.plate }}</div>
+              <div class="font-medium text-gray-900">Caminhão Nº {{ t.truck_number|default:"—" }} — Placa: {{ t.plate }}</div>
               <div class="text-sm text-gray-600">Frota: {{ t.fleet|default:"—" }}</div>
               {% if t.observation %}
                 <div class="text-sm text-gray-600 mt-1">Observação: {{ t.observation }}</div>
@@ -51,7 +51,7 @@
         <div class="space-y-4">
           {% for t in trucks %}
             <div class="border border-gray-200 rounded-md">
-              <div class="px-3 py-2 bg-gray-50 text-sm font-semibold text-secondary">Placa {{ t.plate }}{% if t.fleet %} • Frota {{ t.fleet }}{% endif %}</div>
+              <div class="px-3 py-2 bg-gray-50 text-sm font-semibold text-secondary">Caminhão Nº {{ t.truck_number|default:"—" }} — Placa {{ t.plate }}{% if t.fleet %} • Frota {{ t.fleet }}{% endif %}</div>
               {% if t.observation or t.observation_price is not None %}
                 <div class="px-3 py-2 text-sm text-gray-700 border-b border-gray-100 space-y-1">
                   {% if t.observation %}

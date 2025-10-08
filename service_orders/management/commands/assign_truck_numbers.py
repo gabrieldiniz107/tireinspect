@@ -40,10 +40,15 @@ class Command(BaseCommand):
                 if not dry:
                     t.save(update_fields=["created_by"])
 
-        # Usuários com pedidos
-        user_ids = (
-            ServiceOrder.objects.values_list("created_by_id", flat=True).distinct()
-        )
+        # Usuários com pedidos (garante DISTINCT real e ordem determinística)
+        user_ids_qs = ServiceOrder.objects.order_by().values_list("created_by_id", flat=True).distinct()
+        # Dedup adicional por segurança, preservando ordem
+        seen = set()
+        user_ids = []
+        for uid in user_ids_qs:
+            if uid is not None and uid not in seen:
+                seen.add(uid)
+                user_ids.append(uid)
 
         total_updated = 0
 

@@ -6,9 +6,8 @@ from service_orders.models import ServiceOrder, ServiceOrderTruck
 
 class Command(BaseCommand):
     help = (
-        "Atribui numeração sequencial GLOBAL aos caminhões dos pedidos, "
-        "em ordem cronológica (por padrão: order_date, depois created_at e IDs), "
-        "independentemente do usuário ou da empresa."
+        "Atribui numeração sequencial por usuário aos caminhões dos pedidos. "
+        "Cada usuário inicia em 3000; a ordem é cronológica (padrão: order_date)."
     )
 
     def add_arguments(self, parser):
@@ -41,64 +40,71 @@ class Command(BaseCommand):
                 if not dry:
                     t.save(update_fields=["created_by"])
 
-        # Base queryset: TODOS os trucks (global)
-        trucks_qs = ServiceOrderTruck.objects.select_related("order")
-        if not reassign_all:
-            trucks_qs = trucks_qs.filter(truck_number__isnull=True)
+        # Usuários com pedidos
+        user_ids = (
+            ServiceOrder.objects.values_list("created_by_id", flat=True).distinct()
+        )
 
-        # Ordenação estável global
-        if by == "order_date":
-            trucks_qs = trucks_qs.order_by(
-                "order__order_date",
-                "order__created_at",
-                "created_at",
-                "id",
-            )
-        else:  # created_at
-            trucks_qs = trucks_qs.order_by(
-                "order__created_at",
-                "created_at",
-                "id",
-            )
-
-        trucks = list(trucks_qs)
-        if not trucks:
-            self.stdout.write("Nenhum caminhão a numerar.")
-            return
-
-        # Descobrir início da sequência GLOBAL
-        start = 3000
-        if not reassign_all:
-            last = (
-                ServiceOrderTruck.objects
-                .filter(truck_number__isnull=False)
-                .aggregate(m=Max("truck_number"))
-                .get("m")
-            )
-            if last is not None:
-                start = last + 1
-
-        curr = start
-        self.stdout.write(f"Atribuindo números globalmente a {len(trucks)} caminhões a partir de {curr}…")
         total_updated = 0
-        with transaction.atomic():
-            # Se for reatribuir todos, primeiro zera para evitar conflitos na UNIQUE existente
-            if reassign_all and not dry:
-                for t in trucks:
-                    if t.truck_number is not None:
-                        t.truck_number = None
-                        t.save(update_fields=["truck_number"])
 
-            for t in trucks:
-                if reassign_all or t.truck_number is None:
-                    if not dry:
-                        t.truck_number = curr
-                        # mantém created_by coerente com a ordem, se faltar
-                        if t.created_by_id is None and t.order_id:
-                            t.created_by_id = t.order.created_by_id
-                        t.save(update_fields=["truck_number", "created_by"])
-                    self.stdout.write(f"  - Truck id={t.id} -> Nº {curr} (pedido={t.order_id})")
-                    curr += 1
-                    total_updated += 1
+        for uid in user_ids:
+            if uid is None:
+                continue
+            # Base queryset: trucks do usuário
+            trucks_qs = ServiceOrderTruck.objects.filter(order__created_by_id=uid).select_related("order")
+            if not reassign_all:
+                trucks_qs = trucks_qs.filter(truck_number__isnull=True)
+
+            # Ordenação estável
+            if by == "order_date":
+                trucks_qs = trucks_qs.order_by(
+                    "order__order_date",
+                    "order__created_at",
+                    "created_at",
+                    "id",
+                )
+            else:  # created_at
+                trucks_qs = trucks_qs.order_by(
+                    "order__created_at",
+                    "created_at",
+                    "id",
+                )
+
+            trucks = list(trucks_qs)
+            if not trucks:
+                continue
+
+            # Descobrir início da sequência para o usuário
+            start = 3000
+            if not reassign_all:
+                last = (
+                    ServiceOrderTruck.objects.filter(order__created_by_id=uid, truck_number__isnull=False)
+                    .aggregate(m=Max("truck_number"))
+                    .get("m")
+                )
+                if last is not None:
+                    start = last + 1
+
+            curr = start
+            self.stdout.write(f"Usuário {uid}: atribuindo números a {len(trucks)} caminhões a partir de {curr}…")
+            with transaction.atomic():
+                # Se for reatribuir todos, primeiro zera para evitar conflitos na UNIQUE
+                if reassign_all and not dry:
+                    for t in trucks:
+                        if t.truck_number is not None:
+                            t.truck_number = None
+                            t.save(update_fields=["truck_number"])
+
+                for t in trucks:
+                    # Em reassign_all garantimos que não há conflito mudando todos
+                    if reassign_all or t.truck_number is None:
+                        if not dry:
+                            t.truck_number = curr
+                            if t.created_by_id is None and t.order_id:
+                                t.created_by_id = t.order.created_by_id
+                            t.save(update_fields=["truck_number", "created_by"])
+                        self.stdout.write(f"  - Truck id={t.id} -> Nº {curr} (pedido={t.order_id})")
+                        curr += 1
+                        total_updated += 1
 
         self.stdout.write(self.style.SUCCESS(f"Concluído. Caminhões atualizados: {total_updated}"))

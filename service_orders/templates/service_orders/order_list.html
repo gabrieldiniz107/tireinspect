@@ -13,8 +13,8 @@
         <li class="py-3">
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium text-gray-900">{{ order.client }} — {{ order.vehicle_plate|default:"—" }}</div>
-              <div class="text-sm text-gray-600">{{ order.order_date|date:"d/m/Y" }} • Nº {{ order.service_number|default:"—" }}</div>
+              <div class="font-medium text-gray-900">{{ order.client }}{% if order.vehicle_plate %} — {{ order.vehicle_plate }}{% endif %}</div>
+              <div class="text-sm text-gray-600">{{ order.order_date|date:"d/m/Y" }}{% if order.service_number %} • Nº {{ order.service_number }}{% endif %}</div>
               <div class="text-xs mt-0.5">
                 {% if order.company %}
                   <span class="inline-block rounded bg-gray-100 text-gray-700 px-2 py-0.5">Empresa: {{ order.company.name }}</span>

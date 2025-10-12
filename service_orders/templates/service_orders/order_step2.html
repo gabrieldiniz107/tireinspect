@@ -15,6 +15,11 @@
     {% csrf_token %}
 
     <div class="p-4 space-y-4">
+      {% if form.non_field_errors %}
+        <div class="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
       <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700">Empresa (opcional)</label>
@@ -32,14 +37,17 @@
         <div>
           <label class="block text-sm font-medium text-gray-700">Cliente</label>
           {{ form.client }}
+          {{ form.client.errors }}
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">CNPJ</label>
           {{ form.cnpj_cpf }}
+          {{ form.cnpj_cpf.errors }}
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Quantidade de caminhões</label>
           {{ form.truck_count }}
+          {{ form.truck_count.errors }}
           <p class="text-xs text-gray-500 mt-1">Máximo de 10 caminhões.</p>
         </div>
       </div>
@@ -53,12 +61,19 @@
               <div class="text-sm font-semibold text-secondary mb-2">Caminhão {{ forloop.counter }}</div>
               <div class="grid grid-cols-1 gap-3">
                 <div>
+                  <label class="block text-sm font-medium text-gray-700">Data</label>
+                  {{ f.date }}
+                  {{ f.date.errors }}
+                </div>
+                <div>
                   <label class="block text-sm font-medium text-gray-700">Placa</label>
                   {{ f.plate }}
+                  {{ f.plate.errors }}
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Frota</label>
                   {{ f.fleet }}
+                  {{ f.fleet.errors }}
                 </div>
               </div>
               {% with obs_val=f.observation.value price_val=f.observation_price.value %}
@@ -70,15 +85,18 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Observação</label>
                     {{ f.observation }}
+                    {{ f.observation.errors }}
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Valor da observação</label>
                     {{ f.observation_price }}
+                    {{ f.observation_price.errors }}
                     <p class="text-xs text-gray-500 mt-1">Deixe em branco para não adicionar valor extra.</p>
                   </div>
                 </div>
               </div>
               {% endwith %}
+              {{ f.non_field_errors }}
             </div>
           {% endfor %}
         </div>
@@ -86,11 +104,14 @@
     </div>
 
     <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      {% if is_edit %}
-        <a href="{% url 'service_orders:order_edit_step1' order.id %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
-      {% else %}
-        <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
-      {% endif %}
+      <div class="flex items-center gap-2">
+        {% if is_edit %}
+          <a href="{% url 'service_orders:order_detail' order.id %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar aos detalhes</a>
+          <a href="{% url 'service_orders:order_edit_step1' order.id %}" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 underline">Etapa anterior</a>
+        {% else %}
+          <a href="{% url 'service_orders:order_create' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+        {% endif %}
+      </div>
       <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 text-secondary rounded-md">Avançar</button>
     </div>
   </form>
@@ -103,12 +124,32 @@
     const wrapper = document.getElementById('trucksWrapper');
     const lockCompany = (function(){ try { return JSON.parse(document.getElementById('step2Form').getAttribute('data-lock-company')); } catch(e) { return false; } })();
 
+    function todayStr() {
+      const d = new Date();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
     function updateVisible() {
       if (!countInput || !wrapper) return;
       const n = Math.max(1, Math.min(10, parseInt(countInput.value || '1', 10)));
       const blocks = wrapper.querySelectorAll('.truck-form');
       blocks.forEach((el, idx) => {
-        el.style.display = idx < n ? '' : 'none';
+        const show = idx < n;
+        el.style.display = show ? '' : 'none';
+        const fields = el.querySelectorAll('input, select, textarea');
+        fields.forEach((f) => {
+          if (show) {
+            f.disabled = false;
+            // preenche a data se estiver vazia
+            if (f.type === 'date' && !f.value) {
+              f.value = todayStr();
+            }
+          } else {
+            f.disabled = true;
+          }
+        });
       });
       // Não altere TOTAL_FORMS (evita inconsistências de formset)
     }

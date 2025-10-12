@@ -59,7 +59,8 @@ class ServiceOrder(models.Model):
 
 class ServiceOrderTruck(models.Model):
     order = models.ForeignKey(ServiceOrder, related_name="trucks", on_delete=models.CASCADE)
-    plate = models.CharField("Placa", max_length=10)
+    date = models.DateField("Data", default=timezone.now)
+    plate = models.CharField("Placa", max_length=10, blank=True, default="")
     fleet = models.CharField("Frota", max_length=50, blank=True, default="")
     observation = models.TextField("Observação", blank=True, default="")
     observation_price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)

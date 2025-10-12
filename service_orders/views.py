@@ -114,20 +114,28 @@ def order_create_step2(request):
             )
             order.save()
 
-            # Salvar apenas os primeiros 'truck_count' forms não vazios
+            # Salvar apenas os primeiros 'truck_count' forms com conteúdo relevante
             saved = 0
             for f in formset.forms:
                 if saved >= truck_count:
                     break
                 if not f.cleaned_data:
                     continue
-                plate = f.cleaned_data.get("plate")
-                if not plate:
+                # Considera como 'preenchido' se houver placa, frota, observação ou valor da observação
+                has_content = any([
+                    (f.cleaned_data.get("plate") or "").strip(),
+                    (f.cleaned_data.get("fleet") or "").strip(),
+                    (f.cleaned_data.get("observation") or "").strip(),
+                    f.cleaned_data.get("observation_price") is not None,
+                ])
+                if not has_content:
                     continue
                 truck = f.save(commit=False)
                 truck.order = order
                 if truck.fleet is None:
                     truck.fleet = ""
+                if truck.plate is None:
+                    truck.plate = ""
                 truck.save()
                 saved += 1
 
@@ -278,7 +286,18 @@ def order_edit_step2(request, order_id):
                 obj = f.save(commit=False)
                 if not getattr(obj, "order_id", None):
                     obj.order = order
-                if obj.plate:
+                # Conteúdo relevante além da data (que é padrão)
+                has_content = any([
+                    (f.cleaned_data.get("plate") or "").strip(),
+                    (f.cleaned_data.get("fleet") or "").strip(),
+                    (f.cleaned_data.get("observation") or "").strip(),
+                    f.cleaned_data.get("observation_price") is not None,
+                ])
+                if has_content:
+                    if obj.fleet is None:
+                        obj.fleet = ""
+                    if obj.plate is None:
+                        obj.plate = ""
                     obj.save()
                     saved_ids.append(obj.id)
             # remove extras beyond n

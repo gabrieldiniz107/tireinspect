@@ -55,7 +55,6 @@ def gerar_pedido_pdf(order):
         
         # Informações da ordem: número e data
         c.setFont("Helvetica", 10)
-        c.drawString(margin_left + 40 * mm, height - 40 * mm, f"Nº do pedido: {order.service_number or '—'}")
         data_fmt = formats.date_format(order.order_date, "DATE_FORMAT") if order.order_date else "—"
         c.drawString(margin_left + 110 * mm, height - 40 * mm, f"Data: {data_fmt}")
 
@@ -171,7 +170,9 @@ def gerar_pedido_pdf(order):
         if truck is not None and not truck_label:
             num = getattr(truck, "truck_number", None)
             num_str = f"Nº {num}" if num is not None else "Nº —"
-            truck_label = f"{num_str}  •  Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
+            # Incluir data do caminhão, quando existir
+            date_str = formats.date_format(getattr(truck, "date", None), "DATE_FORMAT") if getattr(truck, "date", None) else None
+            truck_label = f"{num_str}  •  Placa: {truck.plate or '—'}  •  Frota: {truck.fleet or '—'}" + (f"  •  Data: {date_str}" if date_str else "")
 
         if truck_label:
             ensure_space(8 * mm)
@@ -185,25 +186,8 @@ def gerar_pedido_pdf(order):
 
         subtotal = 0.0
 
-        # Observação do caminhão (fora da tabela), como antes, com quebras corretas
-        if truck and (truck.observation or truck.observation_price is not None):
-            line_height = 4.8 * mm
-            if truck.observation:
-                c.setFont("Helvetica-Oblique", 8)
-                c.setFillColor(colors.grey)
-                max_text_width = content_width - 4 * mm
-                # Rótulo
-                ensure_space(line_height)
-                c.drawString(margin_left + 3 * mm, y, "Observação:")
-                y -= line_height
-                # Conteúdo, com quebra por largura e página
-                lines = wrap_text_to_width(truck.observation, "Helvetica-Oblique", 8, max_text_width)
-                for line in lines:
-                    ensure_space(line_height)
-                    c.drawString(margin_left + 3 * mm, y, line)
-                    y -= line_height
-            c.setFillColor(cor_sec)
-            c.setFont("Helvetica", 8)
+        # Observação do caminhão: não desenhar fora da tabela.
+        # Será renderizada apenas como uma linha de serviço dentro da tabela, abaixo.
 
         # Se não houver itens nem observação, exibir aviso e sair
         has_obs_row = bool(truck is not None and (truck.observation or truck.observation_price is not None))
@@ -338,10 +322,11 @@ def gerar_pedido_pdf(order):
 
     if trucks:
         for truck in trucks:
-            # Label do caminhão com numeração sequencial por usuário
+            # Label do caminhão com numeração sequencial por usuário + data quando informada
             num = getattr(truck, "truck_number", None)
             num_str = f"Nº {num}" if num is not None else "Nº —"
-            truck_label = f"{num_str}  •  Placa: {truck.plate}  •  Frota: {truck.fleet or '—'}"
+            date_str = formats.date_format(getattr(truck, "date", None), "DATE_FORMAT") if getattr(truck, "date", None) else None
+            truck_label = f"{num_str}  •  Placa: {truck.plate or '—'}  •  Frota: {truck.fleet or '—'}" + (f"  •  Data: {date_str}" if date_str else "")
             items = list(truck.items.all())
             subtotal = draw_services_table(items, truck=truck, truck_label=truck_label)
             total_geral += subtotal
@@ -373,8 +358,10 @@ def gerar_pedido_pdf(order):
     c.drawRightString(width - margin_right, y, f"Total Geral: {format_money(order.total_amount)}")
     y -= 10 * mm
 
-    # SEÇÃO: Assinaturas (sem título e sem caixas)
-    ensure_space(35 * mm)
+    # SEÇÃO: Assinaturas — sempre na última página, fixo ao rodapé
+    # Força uma nova página dedicada às assinaturas, mesmo que fique em branco acima
+    c.showPage()
+    draw_header()
 
     # Layout lado a lado
     gap = 8 * mm
@@ -385,6 +372,10 @@ def gerar_pedido_pdf(order):
     # Área para a imagem da CheckUp acima da linha
     img_area_h = 22 * mm
     line_offset = 2 * mm  # espaço entre a área e a linha
+
+    # Posicionar o bloco de assinaturas ancorado ao rodapé
+    line_y = margin_bottom + 20 * mm  # distância do rodapé até as linhas
+    y = line_y + img_area_h + line_offset  # topo da área de imagem
 
     # Desenhar imagem de assinatura da CheckUp Pneus (opcional)
     if os.path.exists(SIGN_CHECKUP_PATH):
@@ -406,7 +397,6 @@ def gerar_pedido_pdf(order):
     # Linhas de assinatura acima dos nomes
     c.setStrokeColor(colors.lightgrey)
     c.setLineWidth(0.8)
-    line_y = y - img_area_h - line_offset
     c.line(x_left, line_y, x_left + col_w, line_y)     # linha CheckUp
     c.line(x_right, line_y, x_right + col_w, line_y)   # linha Cliente
 
@@ -416,15 +406,12 @@ def gerar_pedido_pdf(order):
     label_y = line_y - 4 * mm
     c.drawCentredString(x_left + col_w / 2, label_y, "CheckUp Pneus")
     c.drawCentredString(x_right + col_w / 2, label_y, "Cliente")
-    y = label_y - 8 * mm
 
     # Rodapé
     c.setFont("Helvetica", 7)
     c.setFillColor(colors.grey)
     c.drawString(margin_left, margin_bottom - 5 * mm, "CheckUp Pneus - Sistema de Gestão de Serviços")
     c.drawRightString(width - margin_right, margin_bottom - 5 * mm, "Gerado por TireInspect")
-
-    c.showPage()
     c.save()
     pdf = buffer.getvalue()
     buffer.close()

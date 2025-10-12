@@ -84,7 +84,14 @@
     </div>
 
     <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-      <a href="{% if is_edit %}{% url 'service_orders:order_edit_step2' order.id %}{% else %}{% url 'service_orders:order_create_step2' %}{% endif %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+      <div class="flex items-center gap-2">
+        {% if is_edit %}
+          <a href="{% url 'service_orders:order_detail' order.id %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar aos detalhes</a>
+          <a href="{% url 'service_orders:order_edit_step2' order.id %}" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 underline">Etapa anterior</a>
+        {% else %}
+          <a href="{% url 'service_orders:order_create_step2' %}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md">Voltar</a>
+        {% endif %}
+      </div>
       <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">Salvar</button>
     </div>
   </form>

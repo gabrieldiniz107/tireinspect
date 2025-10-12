@@ -88,8 +88,9 @@ class ServiceOrderStep2Form(forms.ModelForm):
 class ServiceOrderTruckForm(forms.ModelForm):
     class Meta:
         model = ServiceOrderTruck
-        fields = ["plate", "fleet", "observation", "observation_price"]
+        fields = ["date", "plate", "fleet", "observation", "observation_price"]
         widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
             "observation": forms.Textarea(
                 attrs={
                     "rows": 2,
@@ -106,6 +107,19 @@ class ServiceOrderTruckForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        from django.utils import timezone
+        super().__init__(*args, **kwargs)
+        # Pré-preenche a data com hoje quando o form não está vinculado
+        if not self.is_bound:
+            if not self.initial.get("date") and not getattr(getattr(self, "instance", None), "pk", None):
+                today = timezone.localdate()
+                self.initial["date"] = today
+                self.fields["date"].initial = today
+        # Placa e Frota não obrigatórios
+        self.fields["plate"].required = False
+        self.fields["fleet"].required = False
 
 
 TruckFormSet = modelformset_factory(

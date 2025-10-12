@@ -30,7 +30,7 @@ class ServiceOrder(models.Model):
     company = models.ForeignKey(Company, related_name="service_orders", on_delete=models.SET_NULL, null=True, blank=True)
     client = models.CharField("Cliente", max_length=120)
     cnpj_cpf = models.CharField("CNPJ/CPF", max_length=20)
-    vehicle_plate = models.CharField("Placa do veículo", max_length=10, blank=True, default="")
+    vehicle_plate = models.CharField("Placa do veículo", max_length=40, blank=True, default="")
     city = models.CharField("Cidade", max_length=80, blank=True, default="")
     manufacturer = models.CharField("Fabricante", max_length=80, blank=True, default="")
     cep = models.CharField("CEP", max_length=10, blank=True, default="")
@@ -60,7 +60,7 @@ class ServiceOrder(models.Model):
 class ServiceOrderTruck(models.Model):
     order = models.ForeignKey(ServiceOrder, related_name="trucks", on_delete=models.CASCADE)
     date = models.DateField("Data", default=timezone.now)
-    plate = models.CharField("Placa", max_length=10, blank=True, default="")
+    plate = models.CharField("Placa", max_length=40, blank=True, default="")
     fleet = models.CharField("Frota", max_length=50, blank=True, default="")
     observation = models.TextField("Observação", blank=True, default="")
     observation_price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)

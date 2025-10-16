@@ -37,6 +37,13 @@
               {% if t.observation_price is not None %}
                 <div class="text-sm text-gray-600">Valor observação: R$ {{ t.observation_price|floatformat:2 }}</div>
               {% endif %}
+              {% if t.observations.all %}
+                <div class="mt-2 space-y-1">
+                  {% for ob in t.observations.all %}
+                    <div class="text-sm text-gray-600">Observação adicional: {{ ob.content }}{% if ob.price is not None %} — Valor: R$ {{ ob.price|floatformat:2 }}{% endif %}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
             </div>
           </li>
         {% endfor %}
@@ -52,13 +59,18 @@
           {% for t in trucks %}
             <div class="border border-gray-200 rounded-md">
               <div class="px-3 py-2 bg-gray-50 text-sm font-semibold text-secondary">Caminhão Nº {{ t.truck_number|default:"—" }} — Placa {{ t.plate }}{% if t.fleet %} • Frota {{ t.fleet }}{% endif %}</div>
-              {% if t.observation or t.observation_price is not None %}
+              {% if t.observation or t.observation_price is not None or t.observations.all %}
                 <div class="px-3 py-2 text-sm text-gray-700 border-b border-gray-100 space-y-1">
                   {% if t.observation %}
                     <div><span class="font-medium">Observação:</span> {{ t.observation }}</div>
                   {% endif %}
                   {% if t.observation_price is not None %}
                     <div><span class="font-medium">Valor observação:</span> R$ {{ t.observation_price|floatformat:2 }}</div>
+                  {% endif %}
+                  {% if t.observations.all %}
+                    {% for ob in t.observations.all %}
+                      <div><span class="font-medium">Obs. adicional:</span> {{ ob.content }}{% if ob.price is not None %} — R$ {{ ob.price|floatformat:2 }}{% endif %}</div>
+                    {% endfor %}
                   {% endif %}
                 </div>
               {% endif %}

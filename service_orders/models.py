@@ -54,7 +54,12 @@ class ServiceOrder(models.Model):
         agg = self.items.aggregate(total=Sum(expr))
         service_total = agg.get("total") or Decimal("0.00")
         observation_total = self.trucks.aggregate(total=Sum("observation_price")).get("total") or Decimal("0.00")
-        return service_total + observation_total
+        # Somar observações adicionais relacionadas a cada caminhão (se existirem)
+        try:
+            extra_obs_total = self.trucks.aggregate(total=Sum("observations__price")).get("total") or Decimal("0.00")
+        except Exception:
+            extra_obs_total = Decimal("0.00")
+        return service_total + observation_total + extra_obs_total
 
 
 class ServiceOrderTruck(models.Model):
@@ -100,6 +105,23 @@ class ServiceOrderTruck(models.Model):
             self.truck_number = (last + 1) if last is not None else 3000
 
         super().save(*args, **kwargs)
+
+
+class ServiceOrderTruckObservation(models.Model):
+    """
+    Observações adicionais por caminhão, cada uma com seu próprio valor opcional.
+    Incluídas no PDF como linhas de serviço, assim como a observação principal.
+    """
+    truck = models.ForeignKey(ServiceOrderTruck, related_name="observations", on_delete=models.CASCADE)
+    content = models.TextField("Observação", blank=True, default="")
+    price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return (self.content or "").strip()[:40] or "Observação"
 
 
 class ServiceOrderItem(models.Model):

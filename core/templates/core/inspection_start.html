@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% block title %}Nova inspeção – {{ truck.plate }}{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+  <div class="flex items-center mb-4">
+    <div class="bg-primary/20 p-2 rounded-full mr-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-2xl font-bold text-secondary">Nova inspeção – {{ truck.plate }}</h1>
+      <p class="text-gray-600 text-sm">Escolha como deseja iniciar.</p>
+    </div>
+  </div>
+
+  {% if last %}
+    <div class="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+      <p class="text-sm text-gray-700">
+        Última inspeção: <span class="font-medium">{{ last.date }}</span>
+        {% if last.odometer %} • Hodômetro: <span class="font-medium">{{ last.odometer }}</span>{% endif %}
+      </p>
+    </div>
+  {% else %}
+    <div class="mb-6 p-4 border border-yellow-200 rounded-md bg-yellow-50 text-sm text-yellow-800">
+      Não há inspeção anterior para este caminhão. Você iniciará uma nova em branco.
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <a href="{% url 'core:inspection_create' truck.id %}{% if last %}?copy_last=1{% endif %}"
+       class="px-4 py-3 bg-primary hover:bg-primary/90 text-secondary rounded-md shadow-sm transition-colors text-center font-medium">
+      {% if last %}Reaproveitar última inspeção{% else %}Começar nova inspeção{% endif %}
+    </a>
+
+    {% if last %}
+      <a href="{% url 'core:inspection_create' truck.id %}"
+         class="px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-secondary rounded-md shadow-sm transition-colors text-center font-medium">
+        Iniciar em branco
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'core:truck_list' truck.company.id %}"
+       class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-secondary rounded-md transition-colors inline-flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Voltar
+    </a>
+  </div>
+</div>
+{% endblock %}
+

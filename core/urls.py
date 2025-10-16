@@ -25,6 +25,9 @@ urlpatterns = [
          views.truck_delete, name="truck_delete"),
     path("caminhao/<int:truck_id>/inspecoes/",
          views.inspection_list, name="inspection_list"),
+    # Tela intermediária para escolher reaproveitar ou não a última inspeção
+    path("caminhao/<int:truck_id>/inspecao/opcao/",
+         views.inspection_start, name="inspection_start"),
     path("caminhao/<int:truck_id>/inspecao/nova/",
          views.inspection_create, name="inspection_create"),
     path("inspecao/<int:inspection_id>/",

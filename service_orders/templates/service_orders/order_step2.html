@@ -96,6 +96,30 @@
                 </div>
               </div>
               {% endwith %}
+
+              <!-- Observações adicionais -->
+              <div class="mt-3 border-t border-dashed border-gray-200 pt-3" data-extra-obs-wrap>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-medium text-secondary">Observações adicionais</div>
+                  <button type="button" class="text-sm text-primary hover:text-secondary" data-add-extra>Adicionar outra</button>
+                </div>
+                <div class="space-y-2" data-extra-list>
+                  {% if f.instance.pk and f.instance.observations.all %}
+                    {% for ob in f.instance.observations.all %}
+                      <div class="grid grid-cols-1 gap-2 p-2 border border-gray-200 rounded" data-extra-item>
+                        <div>
+                          <label class="block text-xs text-gray-600">Observação</label>
+                          <textarea name="extra_obs-{{ forloop.parentloop.counter0 }}-text[]" rows="2" class="w-full">{{ ob.content }}</textarea>
+                        </div>
+                        <div>
+                          <label class="block text-xs text-gray-600">Valor</label>
+                          <input type="number" step="0.01" min="0" name="extra_obs-{{ forloop.parentloop.counter0 }}-price[]" class="w-full" value="{{ ob.price|default_if_none:'' }}" />
+                        </div>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+              </div>
               {{ f.non_field_errors }}
             </div>
           {% endfor %}
@@ -246,6 +270,32 @@
     }
 
     initObservationToggles();
+  })();
+</script>
+<script>
+  // Adicionar/remover linhas de observações adicionais por caminhão
+  (function() {
+    function onAddClick(e) {
+      const wrap = e.currentTarget.closest('[data-extra-obs-wrap]');
+      if (!wrap) return;
+      const truckDiv = wrap.closest('.truck-form');
+      const idx = truckDiv ? truckDiv.getAttribute('data-index') : '0';
+      const list = wrap.querySelector('[data-extra-list]');
+      const item = document.createElement('div');
+      item.className = 'grid grid-cols-1 gap-2 p-2 border border-gray-200 rounded';
+      item.setAttribute('data-extra-item', '');
+      item.innerHTML = `
+        <div>
+          <label class="block text-xs text-gray-600">Observação</label>
+          <textarea name="extra_obs-${idx}-text[]" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600">Valor</label>
+          <input type="number" step="0.01" min="0" name="extra_obs-${idx}-price[]" class="w-full" />
+        </div>`;
+      list.appendChild(item);
+    }
+    document.querySelectorAll('[data-add-extra]').forEach(btn => btn.addEventListener('click', onAddClick));
   })();
 </script>
 {% endblock %}

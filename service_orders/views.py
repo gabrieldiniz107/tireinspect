@@ -116,7 +116,7 @@ def order_create_step2(request):
 
             # Salvar apenas os primeiros 'truck_count' forms com conteúdo relevante
             saved = 0
-            for f in formset.forms:
+            for idx, f in enumerate(formset.forms):
                 if saved >= truck_count:
                     break
                 if not f.cleaned_data:
@@ -137,6 +137,27 @@ def order_create_step2(request):
                 if truck.plate is None:
                     truck.plate = ""
                 truck.save()
+                # Observações adicionais: capturar arrays do POST por índice do form
+                texts = request.POST.getlist(f'extra_obs-{idx}-text[]')
+                prices = request.POST.getlist(f'extra_obs-{idx}-price[]')
+                if texts or prices:
+                    from .models import ServiceOrderTruckObservation
+                    for i, txt in enumerate(texts or []):
+                        txt_norm = (txt or "").strip()
+                        price_val = None
+                        if i < len(prices):
+                            try:
+                                pv = prices[i]
+                                price_val = None if pv in ("", None) else float(pv)
+                            except Exception:
+                                price_val = None
+                        if not txt_norm and price_val is None:
+                            continue
+                        ServiceOrderTruckObservation.objects.create(
+                            truck=truck,
+                            content=txt_norm,
+                            price=price_val,
+                        )
                 saved += 1
 
             request.session.pop("order_step1", None)
@@ -173,7 +194,7 @@ def order_detail(request, order_id):
     # Se ainda é rascunho, redireciona para a etapa de serviços (passo 3) para finalizar
     if getattr(order, "is_draft", False):
         return redirect("service_orders:order_create_step3", order_id=order.id)
-    trucks = order.trucks.all().prefetch_related("items")
+    trucks = order.trucks.all().prefetch_related("items", "observations")
     unassigned = order.items.filter(truck__isnull=True)
     return render(request, "service_orders/order_detail.html", {"order": order, "trucks": trucks, "unassigned_items": unassigned})
 
@@ -299,6 +320,29 @@ def order_edit_step2(request, order_id):
                     if obj.plate is None:
                         obj.plate = ""
                     obj.save()
+                    # Recriar observações adicionais a partir do POST
+                    texts = request.POST.getlist(f'extra_obs-{idx}-text[]')
+                    prices = request.POST.getlist(f'extra_obs-{idx}-price[]')
+                    from .models import ServiceOrderTruckObservation
+                    # Limpa existentes e recria conforme o post atual
+                    obj.observations.all().delete()
+                    if texts or prices:
+                        for i, txt in enumerate(texts or []):
+                            txt_norm = (txt or "").strip()
+                            price_val = None
+                            if i < len(prices):
+                                try:
+                                    pv = prices[i]
+                                    price_val = None if pv in ("", None) else float(pv)
+                                except Exception:
+                                    price_val = None
+                            if not txt_norm and price_val is None:
+                                continue
+                            ServiceOrderTruckObservation.objects.create(
+                                truck=obj,
+                                content=txt_norm,
+                                price=price_val,
+                            )
                     saved_ids.append(obj.id)
             # remove extras beyond n
             order.trucks.exclude(id__in=saved_ids).delete()

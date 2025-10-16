@@ -53,7 +53,14 @@ def gerar_inspecao_pdf(inspecao):
     p.setFont("Helvetica-Bold", 14)
     p.drawString(margin_left + 40 * mm, height - 20 * mm, "INSPEÇÃO DE VEÍCULO")
     p.setFont("Helvetica-Bold", 11)
-    p.drawString(margin_left + 40 * mm, height - 28 * mm, f"Caminhão: {inspecao.truck.plate}")
+    # Exibir placa e número de frota no cabeçalho
+    plate = inspecao.truck.plate or "—"
+    fleet = (inspecao.truck.fleet or "").strip() or "—"
+    p.drawString(
+        margin_left + 40 * mm,
+        height - 28 * mm,
+        f"Caminhão: {plate}  •  Frota: {fleet}"
+    )
     p.setFont("Helvetica", 9)
     p.drawString(margin_left + 40 * mm, height - 35 * mm, f"Data: {inspecao.date:%d/%m/%Y}")
     p.drawString(margin_left + 90 * mm, height - 35 * mm, f"Hodômetro: {inspecao.odometer or '—'} km")
@@ -246,8 +253,8 @@ def gerar_indice_pdf(inspections):
     p.drawString(margin_left + 2 * mm, y + 2 * mm, "ÍNDICE DE INSPEÇÕES")
     y -= 15 * mm
 
-    # preparar dados da tabela
-    headers = ["Nº", "Data", "Caminhão", "Hodômetro", "Observações"]
+    # preparar dados da tabela (inclui Frota)
+    headers = ["Nº", "Data", "Caminhão", "Frota", "Hodômetro", "Observações"]
     data = [headers]
 
     for i, insp in enumerate(inspections, start=1):
@@ -257,12 +264,13 @@ def gerar_indice_pdf(inspections):
             str(i),
             insp.date.strftime("%d/%m/%Y"),
             insp.truck.plate,
+            (insp.truck.fleet or "").strip() or "—",
             f"{insp.odometer or '—'} km",
             obs
         ])
 
-    # larguras das colunas
-    colw = [15*mm, 25*mm, 30*mm, 25*mm, 85*mm]
+    # larguras das colunas (soma ~ 180mm do conteúdo útil)
+    colw = [12*mm, 22*mm, 31*mm, 22*mm, 22*mm, 71*mm]
     if sum(colw) > content_width:
         factor = content_width / sum(colw)
         colw = [w * factor for w in colw]
@@ -272,8 +280,8 @@ def gerar_indice_pdf(inspections):
     style = [
         ("BACKGROUND", (0,0), (-1,0), cor_sec),
         ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
-        ("ALIGN",      (0,0), (3,-1), "CENTER"),  # centralizar as 4 primeiras colunas
-        ("ALIGN",      (4,0), (4,-1), "LEFT"),    # alinhar observações à esquerda
+        ("ALIGN",      (0,0), (4,-1), "CENTER"),  # centralizar as primeiras 5 colunas
+        ("ALIGN",      (5,0), (5,-1), "LEFT"),    # alinhar observações à esquerda
         ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
         ("GRID",       (0,0), (-1,-1), 0.5, colors.grey),
         ("ROWBACKGROUNDS", (0,1),(-1,-1), [colors.white, cor_claro]),

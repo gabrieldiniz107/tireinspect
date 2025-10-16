@@ -72,18 +72,12 @@
       <td class="p-2 md:p-3">{{ tire.pattern|default:"—" }}</td>
       <td class="p-2 md:p-3">{{ tire.fire_number|default:"—" }}</td>
       <td class="p-2 md:p-3">{{ tire.dot|default:"—" }}</td>
-      <!-- Recapado -->
+      <!-- Indicação se é novo -->
       <td class="p-2 md:p-3 text-center">
         {% if tire.rec %}
-          <!-- ✔ verde -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto text-green-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 …" clip-rule="evenodd"/>
-          </svg>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Sim</span>
         {% else %}
-          <!-- ✖ vermelho -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 …" clip-rule="evenodd"/>
-          </svg>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Não</span>
         {% endif %}
       </td>
     </tr>

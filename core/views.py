@@ -158,6 +158,21 @@ def inspection_list(request, truck_id):
 
 
 @login_required
+def inspection_start(request, truck_id):
+    """
+    Tela intermediária que pergunta ao usuário se deseja
+    reaproveitar a última inspeção (quando existir) ou
+    iniciar uma nova em branco.
+    """
+    truck = get_object_or_404(Truck, pk=truck_id, company__created_by=request.user)
+    last = truck.inspections.order_by("-date", "-id").first()
+    return render(request, "core/inspection_start.html", {
+        "truck": truck,
+        "last": last,
+    })
+
+
+@login_required
 def inspection_create(request, truck_id):
     truck = get_object_or_404(Truck, pk=truck_id, company__created_by=request.user)
     inspection = Inspection(truck=truck)
@@ -182,6 +197,28 @@ def inspection_create(request, truck_id):
     else:
         form = InspectionForm(instance=inspection)
         formset = TireFS(instance=inspection)
+        # Se solicitado, carregar dados da última inspeção deste caminhão
+        copy_flag = str(request.GET.get("copy_last", "")).lower() in ("1", "true", "yes")
+        last = None
+        if copy_flag:
+            last = truck.inspections.order_by("-date", "-id").first()
+        if last is not None:
+            # Mapear pneus anteriores por posição
+            prev_tires = list(last.tires.all().order_by("position"))
+            for idx, tform in enumerate(formset.forms, start=1):
+                if idx <= len(prev_tires):
+                    pt = prev_tires[idx-1]
+                    tform.initial.update({
+                        "groove_1": pt.groove_1,
+                        "groove_2": pt.groove_2,
+                        "groove_3": pt.groove_3,
+                        "brand": pt.brand,
+                        "pattern": pt.pattern,
+                        "fire_number": pt.fire_number,
+                        "dot": pt.dot,
+                        # ChoiceField espera string 'True'/'False' no widget
+                        "rec": "True" if pt.rec else "False",
+                    })
         # injeta labels (1E,2E,3ED…) no formset para exibição
         labels = gerar_posicoes_personalizadas(
             truck.truck_type.axle_count,

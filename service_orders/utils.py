@@ -53,10 +53,7 @@ def gerar_pedido_pdf(order):
         c.drawString(margin_left + 40 * mm, height - 28 * mm, HEADER_CNPJ)
         c.drawString(margin_left + 40 * mm, height - 32 * mm, HEADER_WHATS)
         
-        # Informações da ordem: número e data
-        c.setFont("Helvetica", 10)
-        data_fmt = formats.date_format(order.order_date, "DATE_FORMAT") if order.order_date else "—"
-        c.drawString(margin_left + 110 * mm, height - 40 * mm, f"Data: {data_fmt}")
+        # (Removido) Data no cabeçalho do PDF do pedido
 
         # Linha divisória simples
         c.setStrokeColor(colors.lightgrey)
@@ -189,8 +186,14 @@ def gerar_pedido_pdf(order):
         # Observação do caminhão: não desenhar fora da tabela.
         # Será renderizada apenas como uma linha de serviço dentro da tabela, abaixo.
 
-        # Se não houver itens nem observação, exibir aviso e sair
-        has_obs_row = bool(truck is not None and (truck.observation or truck.observation_price is not None))
+        # Se não houver itens nem alguma observação, exibir aviso e sair
+        has_any_obs = False
+        if truck is not None:
+            try:
+                has_any_obs = bool(truck.observation or truck.observation_price is not None or truck.observations.exists())
+            except Exception:
+                has_any_obs = bool(truck.observation or truck.observation_price is not None)
+        has_obs_row = has_any_obs
         if not items and not has_obs_row:
             ensure_space(6 * mm)
             c.setFont("Helvetica-Oblique", 9)
@@ -221,59 +224,44 @@ def gerar_pedido_pdf(order):
         c.setFillColor(cor_sec)
         c.setFont("Helvetica", 8)
         row_index = 0
-        # Inserir observação como serviço (com texto longo) se existir
-        if has_obs_row:
+        # Helper para desenhar uma linha (potencialmente multi-linha) de observação
+        def draw_observation_row(text_value, price_value):
+            nonlocal y, row_index, subtotal
             try:
-                obs_val = float(truck.observation_price) if truck.observation_price is not None else 0.0
+                obs_val = float(price_value) if price_value is not None else 0.0
             except (TypeError, ValueError):
                 obs_val = 0.0
-
-            # Preparar texto completo na primeira coluna
-            content_text = (truck.observation or "").strip()
+            content_text = (text_value or "").strip()
             full_text = ("Observação: " + content_text) if content_text else "Observação"
-
-            # Métricas
             c.setFont("Helvetica", 8)
             c.setFillColor(cor_sec)
             line_h = 4.5 * mm
             pad_y = 1.2 * mm
             pad_x = 2 * mm
             max_text_width = col_widths[0] - (2 * pad_x)
-
-            # Quebra o texto por largura
             lines_all = wrap_text_to_width(full_text, "Helvetica", 8, max_text_width) or ["Observação"]
-
-            # Função para desenhar um "chunk" (parte) que cabe na página atual
             def draw_obs_chunk(lines_chunk, show_values):
                 nonlocal y, row_index, subtotal
                 rect_h = max(5 * mm, (2 * pad_y) + len(lines_chunk) * line_h)
-                # Garantir espaço; se não couber, nova página
                 if y - rect_h < margin_bottom + 20 * mm:
                     new_page()
-                # Fundo alternado
                 c.setFillColor(colors.white if row_index % 2 == 0 else Color(0.97, 0.97, 0.97, 1))
                 c.rect(margin_left, y, content_width, rect_h, fill=1)
                 c.setFillColor(cor_sec)
-                # Texto da primeira coluna (multi-linha, de cima para baixo)
                 ty = y + rect_h - pad_y - line_h
                 for ln in lines_chunk:
                     c.drawString(margin_left + pad_x, ty + 0.4 * mm, ln)
                     ty -= line_h
-                # Outras colunas (apenas no primeiro chunk)
                 if show_values:
                     c.drawCentredString(margin_left + col_widths[0] + col_widths[1]/2, y + pad_y, "1")
                     c.drawString(margin_left + col_widths[0] + col_widths[1] + 2 * mm, y + pad_y, format_money(obs_val))
                     c.drawRightString(margin_left + sum(col_widths) - 2 * mm, y + pad_y, format_money(obs_val))
                     subtotal += obs_val
-                # Avançar
                 y -= (rect_h + 1 * mm)
                 row_index += 1
-
-            # Desenhar possivelmente em múltiplas páginas
             lines_remaining = list(lines_all)
             first = True
             while lines_remaining:
-                # Quantas linhas cabem na página atual?
                 avail_h = y - (margin_bottom + 20 * mm)
                 max_fit = int((avail_h - (2 * pad_y)) // line_h) if avail_h > 0 else 0
                 if max_fit <= 0:
@@ -284,6 +272,17 @@ def gerar_pedido_pdf(order):
                 lines_remaining = lines_remaining[n:]
                 draw_obs_chunk(chunk, show_values=first)
                 first = False
+
+        # Inserir observação principal (se houver)
+        if has_obs_row and truck is not None and (truck.observation or truck.observation_price is not None):
+            draw_observation_row(truck.observation, truck.observation_price)
+        # Inserir observações adicionais (se houver)
+        try:
+            extra_list = list(truck.observations.all())
+        except Exception:
+            extra_list = []
+        for ob in extra_list:
+            draw_observation_row(ob.content, ob.price)
 
         for item in items:
             ensure_space(6 * mm)

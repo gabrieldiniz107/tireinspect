@@ -217,6 +217,16 @@ def order_create_step3(request, order_id):
         if all_valid:
             for _, fs in formsets:
                 fs.save()
+            # Salvar descontos por caminhão (campo simples fora do formset)
+            from decimal import Decimal, InvalidOperation
+            for t, _ in formsets:
+                key = f"discount-{t.id}"
+                raw = request.POST.get(key)
+                try:
+                    t.discount = None if raw in (None, "") else Decimal(str(raw))
+                except (InvalidOperation, Exception):
+                    t.discount = t.discount  # mantém o valor atual se inválido
+                t.save(update_fields=["discount", "updated_at"]) if hasattr(t, "updated_at") else t.save(update_fields=["discount"]) 
             # Finaliza o pedido ao salvar os serviços
             if getattr(order, "is_draft", False):
                 order.is_draft = False
@@ -374,6 +384,16 @@ def order_edit_step3(request, order_id):
         if all_valid:
             for _, fs in formsets:
                 fs.save()
+            # Atualizar descontos por caminhão
+            from decimal import Decimal, InvalidOperation
+            for t, _ in formsets:
+                key = f"discount-{t.id}"
+                raw = request.POST.get(key)
+                try:
+                    t.discount = None if raw in (None, "") else Decimal(str(raw))
+                except (InvalidOperation, Exception):
+                    pass
+                t.save(update_fields=["discount"]) 
             return redirect("service_orders:order_detail", order_id=order.id)
     else:
         for t in trucks:

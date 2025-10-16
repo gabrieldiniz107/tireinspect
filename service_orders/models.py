@@ -59,7 +59,12 @@ class ServiceOrder(models.Model):
             extra_obs_total = self.trucks.aggregate(total=Sum("observations__price")).get("total") or Decimal("0.00")
         except Exception:
             extra_obs_total = Decimal("0.00")
-        return service_total + observation_total + extra_obs_total
+        # Subtrair descontos por caminhão (se existirem)
+        try:
+            discount_total = self.trucks.aggregate(total=Sum("discount")).get("total") or Decimal("0.00")
+        except Exception:
+            discount_total = Decimal("0.00")
+        return service_total + observation_total + extra_obs_total - discount_total
 
 
 class ServiceOrderTruck(models.Model):
@@ -69,6 +74,7 @@ class ServiceOrderTruck(models.Model):
     fleet = models.CharField("Frota", max_length=50, blank=True, default="")
     observation = models.TextField("Observação", blank=True, default="")
     observation_price = models.DecimalField("Valor da observação", max_digits=10, decimal_places=2, null=True, blank=True)
+    discount = models.DecimalField("Desconto", max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     # Novo: numeração sequencial por usuário (começa em 3000)
     # Guardamos também o usuário para permitir unicidade por usuário

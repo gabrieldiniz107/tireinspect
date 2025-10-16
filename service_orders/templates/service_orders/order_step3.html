@@ -74,8 +74,22 @@
             </template>
           </div>
 
-          <div class="px-4 py-2 border-t border-gray-200 bg-white flex items-center justify-end">
-            <div class="text-sm font-semibold text-secondary">Subtotal deste caminhão: R$ <span data-truck-total>0,00</span></div>
+          <div class="px-4 py-2 border-t border-gray-200 bg-white flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold text-secondary">Subtotal deste caminhão: R$ <span data-truck-total>0,00</span></div>
+            </div>
+            <div class="pt-2 border-t border-dashed border-gray-200">
+              <button type="button" class="text-sm text-primary hover:text-secondary" data-discount-toggle>Incluir desconto</button>
+              <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 hidden" data-discount-fields>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-medium text-gray-600">Valor do desconto</label>
+                  <input type="number" step="0.01" min="0" name="discount-{{ truck.id }}" value="{{ truck.discount|default_if_none:'' }}" class="w-full border border-gray-300 rounded px-2 py-1" />
+                </div>
+                <div class="flex items-end">
+                  <span class="text-xs text-gray-500">O desconto será abatido no PDF.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       {% empty %}
@@ -163,6 +177,19 @@
 
       // initial calc
       recalc();
+
+      // desconto toggle
+      const toggle = card.querySelector('[data-discount-toggle]');
+      const fields = card.querySelector('[data-discount-fields]');
+      if (toggle && fields) {
+        let open = !!fields.querySelector('input[name^="discount-"]').value;
+        function render() {
+          fields.classList.toggle('hidden', !open);
+          toggle.textContent = open ? 'Ocultar desconto' : 'Incluir desconto';
+        }
+        render();
+        toggle.addEventListener('click', function(){ open = !open; render(); });
+      }
     });
 
     // Simple browser confirmation before saving

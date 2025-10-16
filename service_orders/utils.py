@@ -186,13 +186,16 @@ def gerar_pedido_pdf(order):
         # Observação do caminhão: não desenhar fora da tabela.
         # Será renderizada apenas como uma linha de serviço dentro da tabela, abaixo.
 
-        # Se não houver itens nem alguma observação, exibir aviso e sair
+        # Se não houver itens, nem observações, nem desconto, exibir aviso e sair
         has_any_obs = False
         if truck is not None:
             try:
-                has_any_obs = bool(truck.observation or truck.observation_price is not None or truck.observations.exists())
+                has_any_obs = bool(
+                    truck.observation or truck.observation_price is not None or
+                    truck.observations.exists() or (getattr(truck, 'discount', None) not in (None, 0))
+                )
             except Exception:
-                has_any_obs = bool(truck.observation or truck.observation_price is not None)
+                has_any_obs = bool(truck.observation or truck.observation_price is not None or (getattr(truck, 'discount', None) not in (None, 0)))
         has_obs_row = has_any_obs
         if not items and not has_obs_row:
             ensure_space(6 * mm)
@@ -283,6 +286,32 @@ def gerar_pedido_pdf(order):
             extra_list = []
         for ob in extra_list:
             draw_observation_row(ob.content, ob.price)
+
+        # Inserir desconto (linha negativa) se houver
+        if truck is not None:
+            try:
+                disc = getattr(truck, 'discount', None)
+            except Exception:
+                disc = None
+            if disc not in (None, 0):
+                # Desenhar como serviço com quantidade 1 e total negativo
+                nonlocal_y = y  # no-op to keep linter calm
+                # Reuso do mesmo layout das linhas normais
+                ensure_space(6 * mm)
+                c.setFillColor(colors.white if row_index % 2 == 0 else Color(0.97, 0.97, 0.97, 1))
+                c.rect(margin_left, y, content_width, 5 * mm, fill=1)
+                c.setFillColor(cor_sec)
+                text = "Desconto"
+                qty = 1
+                price = float(disc) * -1.0
+                total = price
+                subtotal += total
+                c.drawString(margin_left + 2 * mm, y + 1 * mm, text)
+                c.drawCentredString(margin_left + col_widths[0] + col_widths[1]/2, y + 1 * mm, str(qty))
+                c.drawString(margin_left + col_widths[0] + col_widths[1] + 2 * mm, y + 1 * mm, format_money(price))
+                c.drawRightString(margin_left + sum(col_widths) - 2 * mm, y + 1 * mm, format_money(total))
+                y -= 6 * mm
+                row_index += 1
 
         for item in items:
             ensure_space(6 * mm)

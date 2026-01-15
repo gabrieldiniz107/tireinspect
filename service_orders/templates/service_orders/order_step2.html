@@ -147,8 +147,14 @@
     const countInput = document.getElementById('id_truck_count');
     const wrapper = document.getElementById('trucksWrapper');
     const lockCompany = (function(){ try { return JSON.parse(document.getElementById('step2Form').getAttribute('data-lock-company')); } catch(e) { return false; } })();
+    // Data do pedido vinda do Step 1
+    const orderDate = '{{ order_date|escapejs }}';
 
-    function todayStr() {
+    function getDefaultDate() {
+      // Usa a data do Step 1 se disponível, senão usa hoje
+      if (orderDate) {
+        return orderDate;
+      }
       const d = new Date();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -166,9 +172,9 @@
         fields.forEach((f) => {
           if (show) {
             f.disabled = false;
-            // preenche a data se estiver vazia
+            // preenche a data se estiver vazia com a data do Step 1
             if (f.type === 'date' && !f.value) {
-              f.value = todayStr();
+              f.value = getDefaultDate();
             }
           } else {
             f.disabled = true;

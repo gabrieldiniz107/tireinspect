@@ -170,10 +170,15 @@ def order_create_step2(request):
             initial["company"] = fixed_company
         form = ServiceOrderStep2Form(initial=initial)
         form.fields["company"].queryset = Company.objects.filter(created_by=request.user)
-        formset = TruckFormSet(queryset=ServiceOrderTruck.objects.none())
+        # Passa a data do step1 como inicial para cada form de caminhão
+        order_date = step1.get("order_date")
+        truck_initial = [{"date": order_date} for _ in range(10)]
+        formset = TruckFormSet(queryset=ServiceOrderTruck.objects.none(), initial=truck_initial)
 
     companies = Company.objects.filter(created_by=request.user)
     companies_data = [{"id": c.id, "name": c.name, "cnpj": c.cnpj} for c in companies]
+    # Garante que order_date esteja definido para o template
+    order_date = step1.get("order_date", "")
     return render(
         request,
         "service_orders/order_step2.html",
@@ -184,6 +189,7 @@ def order_create_step2(request):
             "companies_data": companies_data,
             "fixed_company": fixed_company,
             "lock_company": lock_company,
+            "order_date": order_date,
         },
     )
 

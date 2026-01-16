@@ -142,6 +142,7 @@ class ServiceOrderItem(models.Model):
         (8, "Consultoria técnica"),
         (9, "Troca de pivô"),
         (10, "Desempeno de barra"),
+        (11, "Embuchamento tirante"),
     )
 
     order = models.ForeignKey(ServiceOrder, related_name="items", on_delete=models.CASCADE)
